@@ -1,0 +1,1662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C3GN Interactive Clinical Guide · Diagnosis, Treatment & Transplant Recurrence</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background:#f6f8fc; }
+.tab-active { background:#fff; border-bottom:3px solid #2563eb; color:#1e3a8a; font-weight:600; }
+.tab-inactive { color:#64748b; border-bottom:3px solid transparent; }
+.tab-inactive:hover { color:#0f172a; background:#f1f5f9; }
+.card-hover { transition: transform .2s, box-shadow .2s; }
+.card-hover:hover { transform: translateY(-3px); box-shadow:0 12px 28px -8px rgba(0,0,0,.12); }
+.accordion-body { max-height:0; overflow:hidden; transition:max-height .35s ease; }
+.quiz-option { transition: all .15s; cursor:pointer; }
+.quiz-option:hover { background:#eff6ff; border-color:#93c5fd; }
+.quiz-option.correct { background:#dcfce7; border-color:#22c55e; }
+.quiz-option.incorrect { background:#fee2e2; border-color:#ef4444; }
+.quiz-option.disabled { pointer-events:none; }
+.progress-bar { transition: width .4s ease; }
+.badge { font-size:.68rem; padding:.2rem .6rem; border-radius:9999px; font-weight:700; letter-spacing:.02em; }
+.severity-btn.active { background:#1e3a8a; color:#fff; border-color:#1e3a8a; }
+.fade-in { animation: fadeIn .3s ease; }
+@keyframes fadeIn { from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+.flow-node { position:relative; }
+.flow-node::after { content:''; position:absolute; left:50%; bottom:-18px; width:2px; height:18px; background:#cbd5e1; }
+.flow-node:last-child::after { display:none; }
+:focus-visible { outline:2px solid #2563eb; outline-offset:2px; border-radius:4px; }
+.unit-toggle.active { background:#1e3a8a; color:#fff; }
+.calc-value { font-variant-numeric: tabular-nums; }
+.param-input { width:5rem; padding:0.375rem 0.5rem; font-size:0.875rem; border:1px solid #e5e7eb; border-radius:0.5rem; text-align:right; }
+.param-input:focus { outline:none; box-shadow:0 0 0 2px rgba(59,130,246,0.4); }
+.param-label { font-size:0.75rem; font-weight:500; color:#4b5563; white-space:nowrap; }
+.param-unit { font-size:0.65rem; font-weight:600; color:#9ca3af; margin-left:0.25rem; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- ================= HEADER ================= -->
+<header class="bg-gradient-to-r from-blue-950 via-blue-900 to-indigo-900 text-white shadow-xl">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-7">
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+<div class="flex items-center gap-4">
+<div class="bg-white/15 p-3.5 rounded-2xl backdrop-blur-sm ring-1 ring-white/20">
+<i class="fas fa-kidney text-3xl text-blue-200" aria-hidden="true"></i>
+</div>
+<div>
+<h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">C3 Glomerulonephritis</h1>
+<p class="text-blue-200 text-sm mt-1">Interactive Guide · Diagnosis · KDIGO Management · Targeted Therapy · Transplant Recurrence</p>
+</div>
+</div>
+<div class="flex items-center gap-2 text-xs text-blue-200 bg-white/10 rounded-xl px-4 py-2.5 ring-1 ring-white/10">
+<i class="fas fa-book-medical" aria-hidden="true"></i>
+<span>KDIGO 2021 · Nature Reviews · VALIANT · APPEAR-C3G</span>
+</div>
+</div>
+</div>
+</header>
+
+<!-- ================= PATIENT PARAMETERS INPUT ================= -->
+<section class="bg-white border-b border-gray-200 shadow-sm">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+<div class="flex items-center gap-3">
+<div class="bg-teal-50 p-2.5 rounded-xl">
+<i class="fas fa-user-injured text-teal-600 text-lg" aria-hidden="true"></i>
+</div>
+<div>
+<h2 class="font-bold text-gray-800 text-sm">Patient Clinical Parameters</h2>
+<p class="text-xs text-gray-500">Enter values to calculate precise doses below</p>
+</div>
+</div>
+<div class="flex flex-wrap items-center gap-3">
+<!-- Unit toggle -->
+<div class="flex items-center bg-gray-100 rounded-xl p-1" role="group" aria-label="Unit system">
+<button id="unitUS" class="unit-toggle active text-xs font-semibold px-3 py-1.5 rounded-lg transition" aria-pressed="true">US</button>
+<button id="unitSI" class="unit-toggle text-xs font-semibold px-3 py-1.5 rounded-lg transition text-gray-600 hover:text-gray-800" aria-pressed="false">SI</button>
+</div>
+<!-- Weight -->
+<div class="flex items-center gap-1.5">
+<label for="inputWeight" class="param-label">Weight</label>
+<input id="inputWeight" type="number" step="0.1" min="0" placeholder="—" class="param-input">
+<span class="param-unit">kg</span>
+</div>
+<!-- Height -->
+<div class="flex items-center gap-1.5">
+<label for="inputHeight" class="param-label">Height</label>
+<input id="inputHeight" type="number" step="1" min="0" placeholder="—" class="param-input">
+<span id="heightUnit" class="param-unit">cm</span>
+</div>
+<!-- Age -->
+<div class="flex items-center gap-1.5">
+<label for="inputAge" class="param-label">Age</label>
+<input id="inputAge" type="number" step="1" min="0" placeholder="—" class="param-input">
+<span class="param-unit">yr</span>
+</div>
+<!-- Proteinuria -->
+<div class="flex items-center gap-1.5">
+<label for="inputProteinuria" class="param-label">Proteinuria</label>
+<input id="inputProteinuria" type="number" step="0.1" min="0" placeholder="—" class="param-input">
+<span id="proteinuriaUnit" class="param-unit">g/g</span>
+</div>
+<!-- eGFR (FIXED) -->
+<div class="flex items-center gap-1.5">
+<label for="inputEGFR" class="param-label">eGFR</label>
+<input id="inputEGFR" type="number" step="1" min="0" placeholder="—" class="param-input">
+<span class="param-unit">mL/min/1.73m²</span>
+</div>
+<!-- Hematuria -->
+<label class="flex items-center gap-1.5 text-xs font-medium text-gray-600 cursor-pointer">
+<input id="inputHematuria" type="checkbox" class="rounded border-gray-300 text-blue-600 focus:ring-blue-300">
+Hematuria
+</label>
+<!-- BSA display -->
+<div class="flex items-center gap-2 bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-1.5">
+<i class="fas fa-calculator text-indigo-600 text-xs" aria-hidden="true"></i>
+<span class="param-label text-indigo-800">BSA</span>
+<span id="bsaDisplay" class="text-sm font-bold text-indigo-700 calc-value">—</span>
+<span class="param-unit text-indigo-500">m²</span>
+</div>
+<!-- Auto-detect -->
+<button id="autoDetectBtn" class="text-xs font-semibold text-blue-700 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200 hover:bg-blue-100 transition">
+<i class="fas fa-wand-magic-sparkles mr-1" aria-hidden="true"></i> Auto-detect
+</button>
+</div>
+</div>
+<div id="paramMessage" class="mt-3 text-xs text-gray-500 hidden">
+<i class="fas fa-circle-info mr-1" aria-hidden="true"></i> <span id="paramMessageText"></span>
+</div>
+</div>
+</section>
+
+<!-- ================= TAB NAV ================= -->
+<div class="bg-white shadow-sm sticky top-0 z-20 border-b border-gray-200">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<nav class="flex overflow-x-auto gap-1 -mb-px" id="tabNav" role="tablist" aria-label="Clinical guide sections">
+<button data-tab="overview" id="tab-btn-overview" role="tab" aria-selected="true" aria-controls="tab-overview" class="tab-btn tab-active px-4 py-3.5 text-sm font-medium rounded-t-lg whitespace-nowrap transition-all flex items-center gap-2">
+<i class="fas fa-info-circle" aria-hidden="true"></i> Overview
+</button>
+<button data-tab="diagnosis" id="tab-btn-diagnosis" role="tab" aria-selected="false" aria-controls="tab-diagnosis" tabindex="-1" class="tab-btn tab-inactive px-4 py-3.5 text-sm font-medium rounded-t-lg whitespace-nowrap transition-all flex items-center gap-2">
+<i class="fas fa-microscope" aria-hidden="true"></i> Diagnosis
+</button>
+<button data-tab="kdigo" id="tab-btn-kdigo" role="tab" aria-selected="false" aria-controls="tab-kdigo" tabindex="-1" class="tab-btn tab-inactive px-4 py-3.5 text-sm font-medium rounded-t-lg whitespace-nowrap transition-all flex items-center gap-2">
+<i class="fas fa-file-medical-alt" aria-hidden="true"></i> KDIGO 2021
+</button>
+<button data-tab="targeted" id="tab-btn-targeted" role="tab" aria-selected="false" aria-controls="tab-targeted" tabindex="-1" class="tab-btn tab-inactive px-4 py-3.5 text-sm font-medium rounded-t-lg whitespace-nowrap transition-all flex items-center gap-2">
+<i class="fas fa-bullseye" aria-hidden="true"></i> Targeted Therapy
+</button>
+<button data-tab="transplant" id="tab-btn-transplant" role="tab" aria-selected="false" aria-controls="tab-transplant" tabindex="-1" class="tab-btn tab-inactive px-4 py-3.5 text-sm font-medium rounded-t-lg whitespace-nowrap transition-all flex items-center gap-2">
+<i class="fas fa-heart-pulse" aria-hidden="true"></i> Transplant Recurrence
+</button>
+<button data-tab="followup" id="tab-btn-followup" role="tab" aria-selected="false" aria-controls="tab-followup" tabindex="-1" class="tab-btn tab-inactive px-4 py-3.5 text-sm font-medium rounded-t-lg whitespace-nowrap transition-all flex items-center gap-2">
+<i class="fas fa-chart-line" aria-hidden="true"></i> Follow-up
+</button>
+<button data-tab="references" id="tab-btn-references" role="tab" aria-selected="false" aria-controls="tab-references" tabindex="-1" class="tab-btn tab-inactive px-4 py-3.5 text-sm font-medium rounded-t-lg whitespace-nowrap transition-all flex items-center gap-2">
+<i class="fas fa-book" aria-hidden="true"></i> References
+</button>
+<button data-tab="quiz" id="tab-btn-quiz" role="tab" aria-selected="false" aria-controls="tab-quiz" tabindex="-1" class="tab-btn tab-inactive px-4 py-3.5 text-sm font-medium rounded-t-lg whitespace-nowrap transition-all flex items-center gap-2">
+<i class="fas fa-question-circle" aria-hidden="true"></i> Quiz
+</button>
+</nav>
+</div>
+</div>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-7">
+
+<!-- ============================================================ -->
+<!-- OVERVIEW TAB -->
+<!-- ============================================================ -->
+<section id="tab-overview" role="tabpanel" aria-labelledby="tab-btn-overview" class="tab-content block">
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6 card-hover">
+<div class="flex items-start gap-4">
+<div class="bg-blue-50 p-3 rounded-xl shrink-0">
+<i class="fas fa-disease text-blue-600 text-2xl" aria-hidden="true"></i>
+</div>
+<div>
+<h2 class="text-xl font-bold text-gray-800">What is C3 Glomerulopathy?</h2>
+<p class="text-gray-600 mt-3 leading-relaxed text-sm">
+C3G is a <strong class="text-gray-800">histologic pattern of glomerulonephritis</strong> defined by
+<strong class="text-blue-700">C3-dominant glomerular staining on immunofluorescence</strong> — C3 at least
+<strong>two orders of magnitude greater</strong> than any other immune reactant — with minimal or no immunoglobulin.
+<sup class="text-blue-600 font-semibold">[2][3]</sup>
+</p>
+<p class="text-gray-600 mt-3 leading-relaxed text-sm">
+Electron microscopy subclassifies C3G into <span class="font-semibold text-indigo-700">dense deposit disease (DDD)</span>
+and <span class="font-semibold text-indigo-700">C3 glomerulonephritis (C3GN)</span>. Both are driven by
+dysregulation of the <strong>alternative pathway (AP) of complement</strong>.
+<sup class="text-blue-600 font-semibold">[2][7][8]</sup>
+</p>
+</div>
+</div>
+</div>
+
+<div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl shadow-sm border border-blue-100 p-6 card-hover">
+<h3 class="font-bold text-gray-800 flex items-center gap-2 text-sm uppercase tracking-wide">
+<i class="fas fa-chart-simple text-blue-600" aria-hidden="true"></i> Epidemiology
+</h3>
+<ul class="mt-4 space-y-3 text-sm">
+<li class="flex justify-between items-center border-b border-blue-200/70 pb-2">
+<span class="text-gray-600">Annual incidence</span>
+<span class="font-bold text-blue-800">0.2–2 / million</span>
+</li>
+<li class="flex justify-between items-center border-b border-blue-200/70 pb-2">
+<span class="text-gray-600">Prevalence</span>
+<span class="font-bold text-blue-800">0.05–1.4 / 10,000</span>
+</li>
+<li class="flex justify-between items-center border-b border-blue-200/70 pb-2">
+<span class="text-gray-600">Hypocomplementemia</span>
+<span class="font-bold text-blue-800">~50% only</span>
+</li>
+<li class="flex justify-between items-center">
+<span class="text-gray-600">Progression to ESKD</span>
+<span class="font-bold text-red-600">30–50% / 10 yr</span>
+</li>
+</ul>
+<p class="text-[11px] text-gray-500 mt-4"><i class="fas fa-circle-info" aria-hidden="true"></i> Hypocomplementemia is present in only ~50% — a normal C3 does not exclude C3G.<sup class="text-blue-600">[1][7]</sup></p>
+</div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 card-hover">
+<span class="badge bg-purple-100 text-purple-700">Pathogenesis</span>
+<h3 class="text-lg font-bold text-gray-800 mt-3">Alternative Pathway Dysregulation</h3>
+<p class="text-gray-600 text-sm mt-2 leading-relaxed">
+C3G arises from uncontrolled AP activation. Drivers include:
+</p>
+<div class="mt-3 grid grid-cols-2 gap-2 text-xs">
+<div class="bg-purple-50 rounded-lg p-2.5 text-purple-800"><i class="fas fa-dna mr-1" aria-hidden="true"></i> Genetic variants (CFH, CD46, C3, CFB)</div>
+<div class="bg-purple-50 rounded-lg p-2.5 text-purple-800"><i class="fas fa-shield-virus mr-1" aria-hidden="true"></i> C3 nephritic factor (C3NeF)</div>
+<div class="bg-purple-50 rounded-lg p-2.5 text-purple-800"><i class="fas fa-antibody mr-1" aria-hidden="true"></i> AP autoantibodies</div>
+<div class="bg-purple-50 rounded-lg p-2.5 text-purple-800"><i class="fas fa-bacteria mr-1" aria-hidden="true"></i> Infection triggers</div>
+<div class="bg-purple-50 rounded-lg p-2.5 text-purple-800 col-span-2"><i class="fas fa-vial mr-1" aria-hidden="true"></i> Monoclonal gammopathy / paraprotein (esp. &gt;50 yr)</div>
+</div>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 card-hover">
+<span class="badge bg-emerald-100 text-emerald-700">Clinical Presentation</span>
+<h3 class="text-lg font-bold text-gray-800 mt-3">Signs &amp; Symptoms</h3>
+<ul class="mt-3 space-y-2.5 text-sm text-gray-600">
+<li class="flex items-start gap-2"><i class="fas fa-tint text-red-400 mt-1" aria-hidden="true"></i> Hematuria (macroscopic or microscopic)</li>
+<li class="flex items-start gap-2"><i class="fas fa-flask text-amber-500 mt-1" aria-hidden="true"></i> Proteinuria / nephrotic syndrome</li>
+<li class="flex items-start gap-2"><i class="fas fa-weight text-blue-400 mt-1" aria-hidden="true"></i> Edema</li>
+<li class="flex items-start gap-2"><i class="fas fa-heartbeat text-rose-400 mt-1" aria-hidden="true"></i> Hypertension</li>
+<li class="flex items-start gap-2"><i class="fas fa-arrow-trend-down text-indigo-400 mt-1" aria-hidden="true"></i> Declining kidney function</li>
+</ul>
+</div>
+</div>
+
+<div class="mt-6 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+<div class="px-6 py-4 bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-gray-100 flex items-center justify-between">
+<h3 class="font-bold text-gray-800 flex items-center gap-2"><i class="fas fa-code-compare text-indigo-600" aria-hidden="true"></i> DDD vs C3GN — Electron Microscopy</h3>
+<button onclick="toggleCompare()" id="compareBtn" aria-pressed="false" class="text-xs font-semibold text-indigo-700 bg-white px-3 py-1.5 rounded-lg border border-indigo-200 hover:bg-indigo-50 transition">
+<i class="fas fa-eye" aria-hidden="true"></i> Highlight
+</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-sm">
+<thead class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
+<tr>
+<th class="px-6 py-3 text-left" scope="col">Feature</th>
+<th class="px-6 py-3 text-left" scope="col">Dense Deposit Disease (DDD)</th>
+<th class="px-6 py-3 text-left" scope="col">C3 Glomerulonephritis (C3GN)</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-gray-100">
+<tr><td class="px-6 py-3 font-medium text-gray-700">EM deposits</td><td class="px-6 py-3 text-gray-600">Highly osmophilic <strong>intramembranous</strong> dense deposits</td><td class="px-6 py-3 text-gray-600">Mesangial, subendothelial, subepithelial &amp; intramembranous</td></tr>
+<tr><td class="px-6 py-3 font-medium text-gray-700">LM pattern</td><td class="px-6 py-3 text-gray-600">MPGN, often with prominent C3</td><td class="px-6 py-3 text-gray-600">Variable: mesangial, endocapillary, MPGN, crescentic</td></tr>
+<tr><td class="px-6 py-3 font-medium text-gray-700">Typical age</td><td class="px-6 py-3 text-gray-600">Children / young adults</td><td class="px-6 py-3 text-gray-600">Wider age range, more adults</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- DIAGNOSIS TAB -->
+<!-- ============================================================ -->
+<section id="tab-diagnosis" role="tabpanel" aria-labelledby="tab-btn-diagnosis" class="tab-content hidden">
+
+<div class="bg-gradient-to-r from-teal-900 to-cyan-900 rounded-2xl p-6 text-white shadow-lg mb-6">
+<h2 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-route text-teal-200" aria-hidden="true"></i> Diagnostic Workup — Step by Step</h2>
+<p class="text-teal-200 text-sm mt-2">Click each step to expand the details. Biopsy is <strong>required</strong>; C3G is a histologic diagnosis.</p>
+</div>
+
+<div class="space-y-4" id="dxAccordion">
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+<button class="acc-trigger w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50 transition" aria-expanded="false" aria-controls="dx-body-1">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold">1</div>
+<div>
+<p class="font-bold text-gray-800">Kidney Biopsy — Histology</p>
+<p class="text-xs text-gray-500">Immunofluorescence · Light microscopy · Electron microscopy</p>
+</div>
+</div>
+<i class="fas fa-chevron-down text-gray-400 acc-icon transition-transform" aria-hidden="true"></i>
+</button>
+<div class="accordion-body" id="dx-body-1">
+<div class="px-6 pb-6 pt-2 space-y-4 text-sm">
+<div class="border-l-4 border-teal-400 pl-4 py-2 bg-teal-50/60 rounded-r-lg">
+<p class="font-semibold text-teal-900">Immunofluorescence (IF) — the defining test</p>
+<p class="text-gray-600 mt-1">Bright C3 staining with <strong>minimal or no immunoglobulin</strong>. C3 must be at least <strong>2 orders of magnitude</strong> greater than any other immune reactant.<sup class="text-blue-600 font-semibold">[1][2][3]</sup></p>
+</div>
+<div class="border-l-4 border-indigo-400 pl-4 py-2 bg-indigo-50/60 rounded-r-lg">
+<p class="font-semibold text-indigo-900">Electron microscopy (EM) — subclassification</p>
+<p class="text-gray-600 mt-1"><strong>DDD:</strong> highly osmophilic intramembranous dense deposits. <strong>C3GN:</strong> mesangial, subendothelial, subepithelial and/or intramembranous deposits.<sup class="text-blue-600 font-semibold">[2][7][3]</sup></p>
+</div>
+<div class="border-l-4 border-gray-300 pl-4 py-2 bg-gray-50 rounded-r-lg">
+<p class="font-semibold text-gray-700">Light microscopy (LM) — variable pattern</p>
+<p class="text-gray-600 mt-1">Mesangial proliferative, endocapillary proliferative, membranoproliferative (MPGN), or necrotizing/crescentic.<sup class="text-blue-600 font-semibold">[2][7][3][8]</sup></p>
+</div>
+</div>
+</div>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+<button class="acc-trigger w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50 transition" aria-expanded="false" aria-controls="dx-body-2">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold">2</div>
+<div>
+<p class="font-bold text-gray-800">Exclude Mimics &amp; Secondary Causes</p>
+<p class="text-xs text-gray-500">Infection-related GN · Monoclonal gammopathy · Masked deposits</p>
+</div>
+</div>
+<i class="fas fa-chevron-down text-gray-400 acc-icon transition-transform" aria-hidden="true"></i>
+</button>
+<div class="accordion-body" id="dx-body-2">
+<div class="px-6 pb-6 pt-2 space-y-4 text-sm">
+<div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+<p class="font-semibold text-amber-900"><i class="fas fa-clock mr-1" aria-hidden="true"></i> The 12-week rule — infection-related GN</p>
+<p class="text-gray-700 mt-1">If all features of GN <strong>resolve by ~12 weeks</strong>, the patient is <strong>not</strong> considered to have C3G (consensus).<sup class="text-blue-600 font-semibold">[1][9]</sup></p>
+</div>
+<div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
+<p class="font-semibold text-indigo-900"><i class="fas fa-vial mr-1" aria-hidden="true"></i> Monoclonal gammopathy / paraprotein</p>
+<p class="text-gray-700 mt-1">Evaluate particularly in patients <strong>&gt;50 years</strong>, though paraproteins can occur in younger patients. Clone-directed therapy may improve outcomes.<sup class="text-blue-600 font-semibold">[1][9]</sup></p>
+</div>
+<div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
+<p class="font-semibold text-gray-800"><i class="fas fa-mask mr-1" aria-hidden="true"></i> Masked monoclonal deposits</p>
+<p class="text-gray-700 mt-1">Consider <strong>pronase-digested paraffin immunofluorescence</strong> to unmask "masked" monoclonal deposits when small amounts of immunoglobulin accompany C3.<sup class="text-blue-600 font-semibold">[1][9]</sup></p>
+</div>
+</div>
+</div>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+<button class="acc-trigger w-full flex items-center justify-between px-6 py-4 text-left hover:bg-gray-50 transition" aria-expanded="false" aria-controls="dx-body-3">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 font-bold">3</div>
+<div>
+<p class="font-bold text-gray-800">Complement &amp; Genetic Evaluation</p>
+<p class="text-xs text-gray-500">AP activity · Autoantibodies · Complement gene variants</p>
+</div>
+</div>
+<i class="fas fa-chevron-down text-gray-400 acc-icon transition-transform" aria-hidden="true"></i>
+</button>
+<div class="accordion-body" id="dx-body-3">
+<div class="px-6 pb-6 pt-2">
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+<div class="bg-purple-50 rounded-xl p-3.5"><i class="fas fa-flask text-purple-600 mr-1" aria-hidden="true"></i> <strong>C3, C4, CH50</strong><br><span class="text-xs text-gray-600">Hypocomplementemia in only ~50%</span></div>
+<div class="bg-purple-50 rounded-xl p-3.5"><i class="fas fa-chart-line text-purple-600 mr-1" aria-hidden="true"></i> <strong>AP function &amp; sC5b-9</strong><br><span class="text-xs text-gray-600">Assess alternative-pathway activity</span></div>
+<div class="bg-purple-50 rounded-xl p-3.5"><i class="fas fa-shield-virus text-purple-600 mr-1" aria-hidden="true"></i> <strong>C3 nephritic factor</strong><br><span class="text-xs text-gray-600">Plus other AP autoantibodies</span></div>
+<div class="bg-purple-50 rounded-xl p-3.5"><i class="fas fa-dna text-purple-600 mr-1" aria-hidden="true"></i> <strong>Genetic variants</strong><br><span class="text-xs text-gray-600">CFH, CD46, C3, CFB and others</span></div>
+</div>
+<p class="text-xs text-gray-500 mt-3"><i class="fas fa-circle-info" aria-hidden="true"></i> Purpose: characterize the driver of AP dysregulation and inform prognosis / transplant readiness.<sup class="text-blue-600 font-semibold">[1][7][9]</sup></p>
+</div>
+</div>
+</div>
+</div>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- KDIGO TAB -->
+<!-- ============================================================ -->
+<section id="tab-kdigo" role="tabpanel" aria-labelledby="tab-btn-kdigo" class="tab-content hidden">
+
+<div class="bg-gradient-to-r from-blue-900 to-indigo-900 rounded-2xl p-6 text-white shadow-lg mb-6">
+<h2 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-file-medical-alt text-blue-200" aria-hidden="true"></i> KDIGO 2021 — Supportive &amp; Immunosuppressive Treatment</h2>
+<p class="text-blue-200 text-sm mt-2">No randomized trials informed the original KDIGO recommendations — they are based on retrospective cohorts and expert opinion.<sup class="text-blue-300 font-semibold">[1][2]</sup></p>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6">
+<p class="text-sm font-semibold text-gray-700 mb-3"><i class="fas fa-hand-pointer text-blue-600" aria-hidden="true"></i> Select a disease scenario:</p>
+<div class="flex flex-wrap gap-2" id="severityNav">
+<button data-sev="mild" class="severity-btn active px-4 py-2 text-sm rounded-xl border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 transition" aria-pressed="true">Mild</button>
+<button data-sev="moderate" class="severity-btn px-4 py-2 text-sm rounded-xl border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 transition" aria-pressed="false">Moderate–Severe</button>
+<button data-sev="rapid" class="severity-btn px-4 py-2 text-sm rounded-xl border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 transition" aria-pressed="false">Rapidly Progressive</button>
+<button data-sev="refractory" class="severity-btn px-4 py-2 text-sm rounded-xl border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 transition" aria-pressed="false">Refractory</button>
+<button data-sev="monoclonal" class="severity-btn px-4 py-2 text-sm rounded-xl border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 transition" aria-pressed="false">Monoclonal Gammopathy</button>
+</div>
+</div>
+
+<div id="severityPanels">
+
+<div data-panel="mild" class="severity-panel fade-in">
+<div class="bg-white rounded-2xl shadow-sm border border-emerald-100 border-l-4 border-l-emerald-500 p-6">
+<div class="flex items-center gap-3 mb-3">
+<span class="badge bg-emerald-100 text-emerald-700">Supportive Care</span>
+<h3 class="text-lg font-bold text-gray-800">Mild disease / all patients</h3>
+</div>
+<p class="text-sm text-gray-600 mb-3">Patients with <strong>preserved function</strong>, <strong>proteinuria &lt;1.5 g/day</strong>, and <strong>no significant hematuria</strong> can be managed conservatively.<sup class="text-blue-600 font-semibold">[2][9]</sup></p>
+<ul class="space-y-2 text-sm text-gray-700">
+<li class="flex items-start gap-2"><i class="fas fa-check-circle text-emerald-500 mt-0.5" aria-hidden="true"></i> RAAS blockade (ACEi/ARB) for BP and proteinuria control</li>
+<li class="flex items-start gap-2"><i class="fas fa-check-circle text-emerald-500 mt-0.5" aria-hidden="true"></i> Lipid management</li>
+<li class="flex items-start gap-2"><i class="fas fa-check-circle text-emerald-500 mt-0.5" aria-hidden="true"></i> Lifestyle measures (salt restriction, smoking cessation, weight)</li>
+</ul>
+</div>
+</div>
+
+<div data-panel="moderate" class="severity-panel hidden fade-in">
+<div class="bg-white rounded-2xl shadow-sm border border-blue-100 border-l-4 border-l-blue-500 p-6">
+<div class="flex items-center gap-3 mb-3">
+<span class="badge bg-blue-100 text-blue-700">KDIGO Practice Point 8.2.2.1</span>
+<h3 class="text-lg font-bold text-gray-800">Moderate-to-Severe disease</h3>
+</div>
+<div class="bg-blue-50 rounded-xl p-4 mb-4 text-sm">
+<p class="font-semibold text-blue-900 mb-1">Definition of moderate-to-severe:</p>
+<p class="text-gray-700">Moderate-to-marked <strong>proliferation on biopsy</strong> with <strong>proteinuria &gt;2 g/day</strong>.<br>
+Also consider treatment if <strong>proteinuria &gt;1 g/day</strong> plus <strong>hematuria</strong> or <strong>declining function over ≥6 months</strong>.<sup class="text-blue-600 font-semibold">[1][2]</sup></p>
+</div>
+<div class="space-y-3">
+<div class="flex items-start gap-3 bg-gray-50 rounded-xl p-3.5">
+<i class="fas fa-1 text-blue-600 mt-1" aria-hidden="true"></i>
+<p class="text-sm text-gray-700"><strong>Initial:</strong> MMF + glucocorticoids</p>
+</div>
+<div class="flex items-start gap-3 bg-gray-50 rounded-xl p-3.5">
+<i class="fas fa-2 text-blue-600 mt-1" aria-hidden="true"></i>
+<p class="text-sm text-gray-700"><strong>If treatment fails:</strong> consider <strong>eculizumab</strong></p>
+</div>
+</div>
+<div class="mt-4 bg-white border border-blue-200 rounded-xl p-4">
+<p class="text-xs font-bold text-blue-900 mb-3"><i class="fas fa-calculator mr-1" aria-hidden="true"></i> Dose Calculator (based on patient parameters above)</p>
+<div class="space-y-3 text-sm">
+<div class="border-l-4 border-blue-400 pl-3">
+<p class="font-semibold text-gray-800">MMF (Mycophenolate Mofetil)</p>
+<table class="w-full text-xs mt-1.5">
+<tr class="border-b border-gray-100"><td class="py-1 text-gray-600">Adults</td><td class="py-1 text-right font-semibold text-gray-800">1,000–1,500 mg PO twice daily</td></tr>
+<tr class="border-b border-gray-100"><td class="py-1 text-gray-600">Total daily</td><td class="py-1 text-right font-semibold text-gray-800">2,000–3,000 mg</td></tr>
+<tr><td class="py-1 text-gray-600">Pediatric (600 mg/m² BID)</td><td class="py-1 text-right text-gray-800 calc-value" id="mmfPediatric">— (enter weight &amp; height)</td></tr>
+</table>
+</div>
+<div class="border-l-4 border-indigo-400 pl-3">
+<p class="font-semibold text-gray-800">Prednisone (Glucocorticoid)</p>
+<table class="w-full text-xs mt-1.5">
+<tr class="border-b border-gray-100"><td class="py-1 text-gray-600">Initial dose (1 mg/kg/day)</td><td class="py-1 text-right font-semibold text-gray-800 calc-value" id="prednisoneDose">— (enter weight)</td></tr>
+<tr class="border-b border-gray-100"><td class="py-1 text-gray-600">Max dose</td><td class="py-1 text-right text-gray-800">80 mg/day</td></tr>
+<tr><td class="py-1 text-gray-600">Taper</td><td class="py-1 text-right text-gray-800">Reduce by 5–10 mg every 1–2 weeks</td></tr>
+</table>
+</div>
+</div>
+</div>
+<p class="text-xs text-gray-500 mt-4"><i class="fas fa-circle-info" aria-hidden="true"></i> MMF response is variable across cohorts but has shown lower ESKD rates and higher remission in some series. Relapse after discontinuation occurs in roughly <strong>one-third</strong>, favoring prolonged therapy.<sup class="text-blue-600 font-semibold">[1][2]</sup></p>
+</div>
+</div>
+
+<div data-panel="rapid" class="severity-panel hidden fade-in">
+<div class="bg-white rounded-2xl shadow-sm border border-rose-100 border-l-4 border-l-rose-500 p-6">
+<div class="flex items-center gap-3 mb-3">
+<span class="badge bg-rose-100 text-rose-700">Urgent</span>
+<h3 class="text-lg font-bold text-gray-800">Rapidly Progressive / Crescentic disease</h3>
+</div>
+<ul class="space-y-3 text-sm text-gray-700">
+<li class="flex items-start gap-2"><i class="fas fa-syringe text-rose-500 mt-0.5" aria-hidden="true"></i> <strong>Pulse IV methylprednisolone</strong> followed by oral prednisone</li>
+<li class="flex items-start gap-2"><i class="fas fa-pills text-rose-500 mt-0.5" aria-hidden="true"></i> Plus <strong>cyclophosphamide</strong> <em>or</em> <strong>MMF</strong></li>
+<li class="flex items-start gap-2"><i class="fas fa-shield-halved text-rose-500 mt-0.5" aria-hidden="true"></i> <strong>Eculizumab</strong> may also be considered</li>
+</ul>
+<div class="mt-4 bg-white border border-rose-200 rounded-xl p-4">
+<p class="text-xs font-bold text-rose-900 mb-3"><i class="fas fa-calculator mr-1" aria-hidden="true"></i> Dose Calculator (based on patient parameters above)</p>
+<div class="space-y-3 text-sm">
+<div class="border-l-4 border-rose-400 pl-3">
+<p class="font-semibold text-gray-800">Methylprednisolone (Pulse Therapy)</p>
+<table class="w-full text-xs mt-1.5">
+<tr class="border-b border-gray-100"><td class="py-1 text-gray-600">Pulse dose</td><td class="py-1 text-right font-semibold text-gray-800">500–1,000 mg IV daily × 3 days</td></tr>
+<tr><td class="py-1 text-gray-600">Followed by</td><td class="py-1 text-right text-gray-800">Prednisone 1 mg/kg/day PO</td></tr>
+</table>
+</div>
+<div class="border-l-4 border-red-400 pl-3">
+<p class="font-semibold text-gray-800">Cyclophosphamide (IV Pulse)</p>
+<table class="w-full text-xs mt-1.5">
+<tr class="border-b border-gray-100"><td class="py-1 text-gray-600">NIH protocol (0.5–1.0 g/m²)</td><td class="py-1 text-right font-semibold text-gray-800 calc-value" id="cycIVDose">— (enter weight &amp; height)</td></tr>
+<tr class="border-b border-gray-100"><td class="py-1 text-gray-600">Euro-Lupus</td><td class="py-1 text-right text-gray-800">500 mg IV every 2 weeks × 6 doses</td></tr>
+<tr class="border-b border-gray-100"><td class="py-1 text-gray-600">Renal adjustment (eGFR &lt;30)</td><td class="py-1 text-right text-gray-800">Reduce 25%</td></tr>
+<tr><td class="py-1 text-gray-600">Max duration</td><td class="py-1 text-right text-gray-800">6 months (avoid cumulative toxicity)</td></tr>
+</table>
+<p class="text-[10px] text-gray-500 mt-2"><i class="fas fa-circle-info" aria-hidden="true"></i> Dosage ranges from 0.5 to 1 g/m². In patients with CrCl 25–50 mL/min, exposure increases ~40%; for CrCl 10–25 mL/min, exposure increases ~70%. Initial doses are decreased by approximately 30% in patients with moderate-to-severe renal impairment.</p>
+</div>
+<div class="border-l-4 border-indigo-400 pl-3">
+<p class="font-semibold text-gray-800">Prednisone (Oral Taper)</p>
+<table class="w-full text-xs mt-1.5">
+<tr class="border-b border-gray-100"><td class="py-1 text-gray-600">Starting dose (1 mg/kg/day)</td><td class="py-1 text-right font-semibold text-gray-800 calc-value" id="prednisoneRapid">— (enter weight)</td></tr>
+<tr class="border-b border-gray-100"><td class="py-1 text-gray-600">Max dose</td><td class="py-1 text-right text-gray-800">80 mg/day</td></tr>
+<tr class="border-b border-gray-100"><td class="py-1 text-gray-600">Duration</td><td class="py-1 text-right text-gray-800">1 month, then taper</td></tr>
+<tr><td class="py-1 text-gray-600">Taper schedule</td><td class="py-1 text-right text-gray-800">Reduce by 10–20% every 2 weeks</td></tr>
+</table>
+</div>
+</div>
+</div>
+<p class="text-xs text-gray-500 mt-4"><sup class="text-blue-600 font-semibold">[2][9][21]</sup></p>
+</div>
+</div>
+
+<div data-panel="refractory" class="severity-panel hidden fade-in">
+<div class="bg-white rounded-2xl shadow-sm border border-amber-100 border-l-4 border-l-amber-500 p-6">
+<div class="flex items-center gap-3 mb-3">
+<span class="badge bg-amber-100 text-amber-700">KDIGO Practice Point 8.2.2.2</span>
+<h3 class="text-lg font-bold text-gray-800">Refractory disease</h3>
+</div>
+<div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+<p class="text-sm text-amber-900"><i class="fas fa-flask mr-1" aria-hidden="true"></i> <strong>Enroll in a clinical trial</strong> where available.<sup class="text-blue-600 font-semibold">[1]</sup></p>
+</div>
+<p class="text-sm text-gray-600 mt-3">Given the expanding landscape of targeted complement inhibitors, trial enrollment is increasingly relevant for patients failing conventional immunosuppression.</p>
+</div>
+</div>
+
+<!-- ============ MONOCLONAL GAMMOPATHY PANEL ============ -->
+<div data-panel="monoclonal" class="severity-panel hidden fade-in">
+<div class="bg-white rounded-2xl shadow-sm border border-purple-100 border-l-4 border-l-purple-500 p-6">
+<div class="flex items-center gap-3 mb-3">
+<span class="badge bg-purple-100 text-purple-700">Secondary cause</span>
+<h3 class="text-lg font-bold text-gray-800">Monoclonal Gammopathy–Associated C3G</h3>
+</div>
+<p class="text-sm text-gray-600 mb-3">When a paraprotein is identified, <strong>clone-directed therapy</strong> may improve kidney outcomes rather than conventional immunosuppression alone.<sup class="text-blue-600 font-semibold">[1][9]</sup></p>
+
+<div class="bg-purple-50 border border-purple-200 rounded-xl p-4 mb-4">
+<p class="font-semibold text-purple-900 text-sm mb-2"><i class="fas fa-diagnoses mr-1" aria-hidden="true"></i> Diagnostic workup for monoclonal gammopathy</p>
+<ul class="space-y-2 text-sm text-gray-700">
+<li class="flex items-start gap-2"><i class="fas fa-search text-purple-500 mt-0.5" aria-hidden="true"></i> Screen all adults, especially &gt;50 years</li>
+<li class="flex items-start gap-2"><i class="fas fa-mask text-purple-500 mt-0.5" aria-hidden="true"></i> Consider pronase-digested paraffin IF for masked deposits</li>
+<li class="flex items-start gap-2"><i class="fas fa-notes-medical text-purple-500 mt-0.5" aria-hidden="true"></i> Hematology referral for clone characterization (SPEP, SFLC, bone marrow biopsy)</li>
+<li class="flex items-start gap-2"><i class="fas fa-dna text-purple-500 mt-0.5" aria-hidden="true"></i> Complement genetics to identify pathogenic variants (e.g., CFH, C3, CFB)</li>
+</ul>
+</div>
+
+<!-- CyBorD -->
+<div class="bg-white border border-purple-200 rounded-xl p-4 mb-4">
+<p class="text-xs font-bold text-purple-900 mb-3"><i class="fas fa-prescription mr-1" aria-hidden="true"></i> Clone-Directed Therapy — CyBorD Regimen (non-IgM monoclonal)</p>
+<p class="text-xs text-gray-600 mb-3">For non-IgM monoclonal immunoglobulin (e.g., IgG or IgA). The CyBorD regimen is the preferred approach for monoclonal gammopathy-associated C3G.</p>
+<table class="w-full text-xs">
+<thead class="bg-purple-50">
+<tr>
+<th class="px-3 py-2 text-left font-semibold text-purple-900">Drug</th>
+<th class="px-3 py-2 text-left font-semibold text-purple-900">Dose</th>
+<th class="px-3 py-2 text-left font-semibold text-purple-900">Schedule</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-purple-100">
+<tr>
+<td class="px-3 py-2 font-medium text-gray-800">Cyclophosphamide</td>
+<td class="px-3 py-2 text-gray-700">300 mg/m² (max 500 mg)</td>
+<td class="px-3 py-2 text-gray-700">Days 1, 8, 15, 22 (oral or IV)</td>
+</tr>
+<tr>
+<td class="px-3 py-2 font-medium text-gray-800">Bortezomib (Velcade®)</td>
+<td class="px-3 py-2 text-gray-700">1.3 mg/m²</td>
+<td class="px-3 py-2 text-gray-700">Days 1, 8, 15, 22 (subcutaneous)</td>
+</tr>
+<tr>
+<td class="px-3 py-2 font-medium text-gray-800">Dexamethasone</td>
+<td class="px-3 py-2 text-gray-700">40 mg</td>
+<td class="px-3 py-2 text-gray-700">Days 1, 8, 15, 22 (oral or IV)</td>
+</tr>
+</tbody>
+</table>
+<p class="text-[10px] text-gray-500 mt-2"><i class="fas fa-circle-info" aria-hidden="true"></i> Cycle length: 28 days. Also known as VCd (Velcade, cyclophosphamide, dexamethasone). For dexamethasone, a reduced dose of 20 mg weekly may be used for patients &gt;70 years, BMI &lt;18.5, or those with poor tolerance. Bortezomib is preferentially administered subcutaneously to reduce peripheral neuropathy risk. Once-weekly bortezomib (1.3 mg/m² on days 1, 8, 15, 22) shows comparable efficacy with lower neuropathy rates compared to twice-weekly administration.</p>
+</div>
+
+<!-- Rituximab-based -->
+<div class="bg-white border border-purple-200 rounded-xl p-4 mb-4">
+<p class="text-xs font-bold text-purple-900 mb-3"><i class="fas fa-prescription mr-1" aria-hidden="true"></i> Clone-Directed Therapy — Rituximab-Based Regimen (IgM monoclonal)</p>
+<p class="text-xs text-gray-600 mb-3">For IgM monoclonal immunoglobulin (e.g., associated with Waldenström macroglobulinemia or B-cell lymphoma).</p>
+<table class="w-full text-xs">
+<thead class="bg-purple-50">
+<tr>
+<th class="px-3 py-2 text-left font-semibold text-purple-900">Drug</th>
+<th class="px-3 py-2 text-left font-semibold text-purple-900">Dose</th>
+<th class="px-3 py-2 text-left font-semibold text-purple-900">Schedule</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-purple-100">
+<tr>
+<td class="px-3 py-2 font-medium text-gray-800">Rituximab</td>
+<td class="px-3 py-2 text-gray-700">375 mg/m²</td>
+<td class="px-3 py-2 text-gray-700">Weekly × 4 weeks (or 1,000 mg × 2 doses 2 weeks apart)</td>
+</tr>
+<tr>
+<td class="px-3 py-2 font-medium text-gray-800">Cyclophosphamide (optional)</td>
+<td class="px-3 py-2 text-gray-700">300 mg/m²</td>
+<td class="px-3 py-2 text-gray-700">Days 1, 8, 15, 22 (as part of combination)</td>
+</tr>
+<tr>
+<td class="px-3 py-2 font-medium text-gray-800">Dexamethasone (optional)</td>
+<td class="px-3 py-2 text-gray-700">40 mg</td>
+<td class="px-3 py-2 text-gray-700">Days 1, 8, 15, 22 (as part of combination)</td>
+</tr>
+</tbody>
+</table>
+<p class="text-[10px] text-gray-500 mt-2"><i class="fas fa-circle-info" aria-hidden="true"></i> Rituximab alone or in combination with cyclophosphamide and dexamethasone is recommended for IgM monoclonal gammopathy-associated C3G. Rituximab is preferred in pre-menopausal women concerned about fertility and in frail older adults.</p>
+</div>
+
+<!-- Calculated doses -->
+<div class="bg-purple-50 border border-purple-200 rounded-xl p-4">
+<p class="text-xs font-bold text-purple-900 mb-3"><i class="fas fa-calculator mr-1" aria-hidden="true"></i> Calculated Doses (based on patient parameters above)</p>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+<div class="bg-white rounded-lg p-3">
+<p class="font-semibold text-gray-800">Cyclophosphamide (CyBorD)</p>
+<p class="text-gray-600 mt-1">300 mg/m² × BSA = <span class="font-bold text-purple-700 calc-value" id="cycDoseCyBorD">— (enter weight &amp; height)</span></p>
+</div>
+<div class="bg-white rounded-lg p-3">
+<p class="font-semibold text-gray-800">Bortezomib</p>
+<p class="text-gray-600 mt-1">1.3 mg/m² × BSA = <span class="font-bold text-purple-700 calc-value" id="bortezomibDose">— (enter weight &amp; height)</span></p>
+</div>
+<div class="bg-white rounded-lg p-3">
+<p class="font-semibold text-gray-800">Rituximab (IgM)</p>
+<p class="text-gray-600 mt-1">375 mg/m² × BSA = <span class="font-bold text-purple-700 calc-value" id="rituximabDose">— (enter weight &amp; height)</span></p>
+</div>
+<div class="bg-white rounded-lg p-3">
+<p class="font-semibold text-gray-800">Dexamethasone</p>
+<p class="text-gray-600 mt-1">40 mg (fixed dose, or 20 mg if &gt;70 yr)</p>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<!-- ============ GANTT CHART ============ -->
+<div class="mt-6 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-bold text-gray-800 flex items-center gap-2"><i class="fas fa-bars-staggered text-indigo-600" aria-hidden="true"></i> Gantt Chart — Drug Start &amp; Stop Schedule (24 Months)</h3>
+<span class="text-[10px] text-gray-400">Hover/tap bars for details</span>
+</div>
+
+<svg viewBox="0 0 900 400" class="w-full min-w-[700px]" role="img" aria-label="Gantt chart of drug start and stop dates over 24 months">
+<rect x="140" y="10" width="720" height="330" fill="#f8fafc" rx="6"/>
+<line x1="140" y1="10" x2="140" y2="340" stroke="#cbd5e1" stroke-width="1.5"/>
+<line x1="230" y1="10" x2="230" y2="340" stroke="#e2e8f0" stroke-width="0.5" stroke-dasharray="2,3"/>
+<line x1="320" y1="10" x2="320" y2="340" stroke="#e2e8f0" stroke-width="0.5" stroke-dasharray="2,3"/>
+<line x1="410" y1="10" x2="410" y2="340" stroke="#e2e8f0" stroke-width="0.5" stroke-dasharray="2,3"/>
+<line x1="500" y1="10" x2="500" y2="340" stroke="#e2e8f0" stroke-width="0.5" stroke-dasharray="2,3"/>
+<line x1="590" y1="10" x2="590" y2="340" stroke="#e2e8f0" stroke-width="0.5" stroke-dasharray="2,3"/>
+<line x1="680" y1="10" x2="680" y2="340" stroke="#e2e8f0" stroke-width="0.5" stroke-dasharray="2,3"/>
+<line x1="770" y1="10" x2="770" y2="340" stroke="#e2e8f0" stroke-width="0.5" stroke-dasharray="2,3"/>
+<line x1="860" y1="10" x2="860" y2="340" stroke="#cbd5e1" stroke-width="1.5"/>
+
+<text x="140" y="358" text-anchor="middle" class="text-[9px] fill-gray-500 font-semibold">0</text>
+<text x="230" y="358" text-anchor="middle" class="text-[9px] fill-gray-500 font-semibold">3</text>
+<text x="320" y="358" text-anchor="middle" class="text-[9px] fill-gray-500 font-semibold">6</text>
+<text x="410" y="358" text-anchor="middle" class="text-[9px] fill-gray-500 font-semibold">9</text>
+<text x="500" y="358" text-anchor="middle" class="text-[9px] fill-gray-500 font-semibold">12</text>
+<text x="590" y="358" text-anchor="middle" class="text-[9px] fill-gray-500 font-semibold">15</text>
+<text x="680" y="358" text-anchor="middle" class="text-[9px] fill-gray-500 font-semibold">18</text>
+<text x="770" y="358" text-anchor="middle" class="text-[9px] fill-gray-500 font-semibold">21</text>
+<text x="860" y="358" text-anchor="middle" class="text-[9px] fill-gray-500 font-semibold">24</text>
+<text x="500" y="378" text-anchor="middle" class="text-[10px] fill-gray-600 font-bold">Months from treatment onset</text>
+
+<text x="130" y="45" text-anchor="end" class="text-[10px] fill-gray-700 font-semibold">MMF</text>
+<text x="130" y="90" text-anchor="end" class="text-[10px] fill-gray-700 font-semibold">Prednisone</text>
+<text x="130" y="135" text-anchor="end" class="text-[10px] fill-gray-700 font-semibold">Methylprednisolone</text>
+<text x="130" y="180" text-anchor="end" class="text-[10px] fill-gray-700 font-semibold">Cyclophosphamide</text>
+<text x="130" y="225" text-anchor="end" class="text-[10px] fill-gray-700 font-semibold">RAAS blockade</text>
+<text x="130" y="270" text-anchor="end" class="text-[10px] fill-gray-700 font-semibold">Iptacopan</text>
+<text x="130" y="315" text-anchor="end" class="text-[10px] fill-gray-700 font-semibold">Pegcetacoplan</text>
+
+<rect x="140" y="32" width="720" height="22" rx="4" fill="#3b82f6" opacity="0.85"/>
+<text x="500" y="47" text-anchor="middle" class="text-[9px] fill-white font-bold">2,000–3,000 mg/day (maintenance, 24 mo)</text>
+
+<rect x="140" y="77" width="360" height="22" rx="4" fill="#8b5cf6" opacity="0.85"/>
+<text x="320" y="92" text-anchor="middle" class="text-[9px] fill-white font-bold">1 mg/kg/day → taper (0–12 mo)</text>
+<rect x="500" y="77" width="180" height="22" rx="4" fill="#c4b5fd" opacity="0.85"/>
+<text x="590" y="92" text-anchor="middle" class="text-[9px] fill-gray-700 font-bold">≤7.5 mg/day (12–18 mo)</text>
+
+<rect x="140" y="122" width="15" height="22" rx="3" fill="#f43f5e"/>
+<text x="165" y="137" text-anchor="start" class="text-[9px] fill-rose-700 font-bold">500–1,000 mg IV × 3 days</text>
+
+<rect x="140" y="167" width="180" height="22" rx="4" fill="#ef4444" opacity="0.9"/>
+<text x="230" y="182" text-anchor="middle" class="text-[9px] fill-white font-bold">0.5–1.0 g/m² monthly × 6 mo</text>
+
+<rect x="140" y="212" width="720" height="22" rx="4" fill="#14b8a6" opacity="0.85"/>
+<text x="500" y="227" text-anchor="middle" class="text-[9px] fill-white font-bold">ACEi/ARB continuous (24 mo)</text>
+
+<rect x="230" y="257" width="630" height="22" rx="4" fill="#6366f1" opacity="0.9"/>
+<text x="545" y="272" text-anchor="middle" class="text-[9px] fill-white font-bold">200 mg PO BID (ongoing)</text>
+
+<rect x="320" y="302" width="540" height="22" rx="4" fill="#f43f5e" opacity="0.9"/>
+<text x="590" y="317" text-anchor="middle" class="text-[9px] fill-white font-bold">1,080 mg SC twice weekly (ongoing)</text>
+
+<line x1="140" y1="10" x2="140" y2="340" stroke="#1e3a8a" stroke-width="2"/>
+<text x="145" y="22" class="text-[8px] fill-blue-900 font-bold">Start</text>
+</svg>
+
+<div class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+<div class="flex items-center gap-2 bg-gray-50 rounded-lg p-2.5">
+<span class="w-3 h-3 rounded bg-blue-500 shrink-0"></span>
+<span class="text-gray-700"><strong>MMF:</strong> Start day 1, continue 24 mo</span>
+</div>
+<div class="flex items-center gap-2 bg-gray-50 rounded-lg p-2.5">
+<span class="w-3 h-3 rounded bg-violet-500 shrink-0"></span>
+<span class="text-gray-700"><strong>Prednisone:</strong> Taper over 12 mo</span>
+</div>
+<div class="flex items-center gap-2 bg-gray-50 rounded-lg p-2.5">
+<span class="w-3 h-3 rounded bg-red-500 shrink-0"></span>
+<span class="text-gray-700"><strong>Cyclophosphamide:</strong> 6 mo max</span>
+</div>
+<div class="flex items-center gap-2 bg-gray-50 rounded-lg p-2.5">
+<span class="w-3 h-3 rounded bg-teal-500 shrink-0"></span>
+<span class="text-gray-700"><strong>RAAS blockade:</strong> Continuous</span>
+</div>
+</div>
+
+<div class="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-900">
+<i class="fas fa-triangle-exclamation mr-1" aria-hidden="true"></i> <strong>Note:</strong> This Gantt chart illustrates typical treatment sequencing per KDIGO 2021 and subsequent approvals. Actual timing varies by patient response, tolerability, and disease severity. Cyclophosphamide should not exceed 6 months cumulative due to toxicity. Complement inhibitors (iptacopan, pegcetacoplan) are shown as sequential options, not concurrent.
+</div>
+</div>
+
+<div class="mt-6 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+<div class="px-6 py-4 bg-gray-50 border-b border-gray-100">
+<h3 class="font-bold text-gray-800 flex items-center gap-2"><i class="fas fa-table-list text-blue-600" aria-hidden="true"></i> KDIGO 2021 at a Glance</h3>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-sm">
+<thead class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
+<tr><th class="px-6 py-3 text-left" scope="col">Scenario</th><th class="px-6 py-3 text-left" scope="col">Recommendation</th></tr>
+</thead>
+<tbody class="divide-y divide-gray-100">
+<tr><td class="px-6 py-3 font-medium text-gray-700">Mild / preserved function</td><td class="px-6 py-3 text-gray-600">RAAS blockade + supportive care</td></tr>
+<tr><td class="px-6 py-3 font-medium text-gray-700">Moderate–severe</td><td class="px-6 py-3 text-gray-600">MMF + glucocorticoids → eculizumab if fail</td></tr>
+<tr><td class="px-6 py-3 font-medium text-gray-700">Rapidly progressive / crescentic</td><td class="px-6 py-3 text-gray-600">Pulse steroids + cyclophosphamide or MMF (± eculizumab)</td></tr>
+<tr><td class="px-6 py-3 font-medium text-gray-700">Refractory</td><td class="px-6 py-3 text-gray-600">Clinical trial enrollment</td></tr>
+<tr><td class="px-6 py-3 font-medium text-gray-700">Monoclonal gammopathy</td><td class="px-6 py-3 text-gray-600">Clone-directed therapy (CyBorD or Rituximab-based)</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- TARGETED THERAPY TAB -->
+<!-- ============================================================ -->
+<section id="tab-targeted" role="tabpanel" aria-labelledby="tab-btn-targeted" class="tab-content hidden">
+
+<div class="bg-gradient-to-r from-indigo-900 to-purple-900 rounded-2xl p-6 text-white shadow-lg mb-6">
+<h2 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-bullseye text-indigo-200" aria-hidden="true"></i> Targeted Complement Inhibition</h2>
+<p class="text-indigo-200 text-sm mt-2">Two agents acting proximally on the alternative pathway now carry C3G indications — a major shift from terminal C5 blockade.</p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 card-hover border-t-4 border-t-indigo-500">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-3">
+<div class="bg-indigo-100 p-2.5 rounded-xl"><i class="fas fa-capsules text-indigo-700" aria-hidden="true"></i></div>
+<div>
+<h3 class="font-bold text-gray-800">Iptacopan (Fabhalta®)</h3>
+<p class="text-xs text-gray-500">Factor B inhibitor · Oral</p>
+</div>
+</div>
+<span class="badge bg-emerald-100 text-emerald-700">FDA approved</span>
+</div>
+<div class="bg-indigo-50 rounded-xl p-3 mb-3">
+<p class="text-xs font-bold text-indigo-900">APPEAR-C3G · Phase 3</p>
+<p class="text-xs text-gray-600 mt-1">Randomised, double-blind, placebo-controlled study of oral iptacopan in C3G.<sup class="text-blue-600 font-semibold">[5]</sup></p>
+</div>
+<div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-3">
+<p class="text-xs font-bold text-indigo-900 mb-2"><i class="fas fa-prescription mr-1" aria-hidden="true"></i> Dosing Schedule</p>
+<table class="w-full text-xs">
+<tr class="border-b border-indigo-200">
+<td class="py-1.5 text-gray-600">Adults</td>
+<td class="py-1.5 text-right font-semibold text-indigo-900">200 mg PO twice daily</td>
+</tr>
+<tr class="border-b border-indigo-200">
+<td class="py-1.5 text-gray-600">Total daily dose</td>
+<td class="py-1.5 text-right font-semibold text-indigo-900">400 mg</td>
+</tr>
+<tr class="border-b border-indigo-200">
+<td class="py-1.5 text-gray-600">Administration</td>
+<td class="py-1.5 text-right text-indigo-900">With or without food; swallow whole</td>
+</tr>
+<tr>
+<td class="py-1.5 text-gray-600">Renal impairment</td>
+<td class="py-1.5 text-right text-indigo-900">No dose adjustment (eGFR ≥25)</td>
+</tr>
+</table>
+<p class="text-[10px] text-gray-500 mt-2"><i class="fas fa-circle-info" aria-hidden="true"></i> Used in combination with a RAS inhibitor (unless contraindicated/intolerable).</p>
+</div>
+<ul class="space-y-2 text-sm text-gray-600">
+<li class="flex items-start gap-2"><i class="fas fa-check text-emerald-500 mt-0.5" aria-hidden="true"></i> Significant proteinuria reduction at 6 months, sustained to 12 months</li>
+<li class="flex items-start gap-2"><i class="fas fa-check text-emerald-500 mt-0.5" aria-hidden="true"></i> First disease-specific therapy for C3G (2025)</li>
+</ul>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 card-hover border-t-4 border-t-rose-500">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-3">
+<div class="bg-rose-100 p-2.5 rounded-xl"><i class="fas fa-syringe text-rose-700" aria-hidden="true"></i></div>
+<div>
+<h3 class="font-bold text-gray-800">Pegcetacoplan (Empaveli®)</h3>
+<p class="text-xs text-gray-500">C3 / C3b inhibitor · Subcutaneous</p>
+</div>
+</div>
+<span class="badge bg-emerald-100 text-emerald-700">FDA approved</span>
+</div>
+<div class="bg-rose-50 rounded-xl p-3 mb-3">
+<p class="text-xs font-bold text-rose-900">VALIANT · Phase 3</p>
+<p class="text-xs text-gray-600 mt-1">Trial of pegcetacoplan in C3G and primary IC-MPGN.<sup class="text-blue-600 font-semibold">[6]</sup></p>
+</div>
+<div class="mb-3">
+<div class="flex items-center gap-3">
+<div class="flex-1 bg-gray-200 rounded-full h-2.5">
+<div class="bg-rose-500 h-2.5 rounded-full" style="width:68.1%"></div>
+</div>
+<span class="text-sm font-extrabold text-rose-700">68.1%</span>
+</div>
+<p class="text-xs text-gray-500 mt-1">Relative reduction in proteinuria at week 26</p>
+</div>
+<div class="bg-rose-50 border border-rose-200 rounded-xl p-4 mb-3">
+<p class="text-xs font-bold text-rose-900 mb-2"><i class="fas fa-prescription mr-1" aria-hidden="true"></i> Dosing Schedule</p>
+<table class="w-full text-xs">
+<tr class="border-b border-rose-200">
+<td class="py-1.5 text-gray-600">Adults (≥18 yr)</td>
+<td class="py-1.5 text-right font-semibold text-rose-900">1,080 mg SC twice weekly</td>
+</tr>
+<tr class="border-b border-rose-200">
+<td class="py-1.5 text-gray-600">Pediatric 12–<18 yr</td>
+<td class="py-1.5 text-right text-rose-900">Weight-based (see below)</td>
+</tr>
+<tr class="border-b border-rose-200">
+<td class="py-1.5 text-gray-600">Infusion time</td>
+<td class="py-1.5 text-right text-rose-900">~30 min (2 sites) or ~60 min (1 site)</td>
+</tr>
+<tr>
+<td class="py-1.5 text-gray-600">Storage</td>
+<td class="py-1.5 text-right text-rose-900">Refrigerate 2°C–8°C</td>
+</tr>
+</table>
+<p class="text-[10px] text-gray-500 mt-2"><i class="fas fa-circle-info" aria-hidden="true"></i> Pediatric weight-based dosing: ≥50 kg → 1,080 mg; 35–<50 kg → 810 mg; <35 kg → 648 mg (all twice weekly).</p>
+</div>
+<ul class="space-y-2 text-sm text-gray-600">
+<li class="flex items-start gap-2"><i class="fas fa-check text-emerald-500 mt-0.5" aria-hidden="true"></i> Benefit consistent across disease type, transplant status, baseline kidney function &amp; concurrent immunosuppression</li>
+<li class="flex items-start gap-2"><i class="fas fa-check text-emerald-500 mt-0.5" aria-hidden="true"></i> Indication <strong>includes post-transplant recurrent disease</strong></li>
+</ul>
+</div>
+</div>
+
+<div class="mt-6 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+<h3 class="font-bold text-gray-800 flex items-center gap-2 mb-4"><i class="fas fa-flask-vial text-gray-500" aria-hidden="true"></i> Prior &amp; Less Conclusive Agents</h3>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+<div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+<p class="font-bold text-gray-800">Eculizumab <span class="badge bg-gray-200 text-gray-600 ml-1">C5</span></p>
+<p class="text-xs text-gray-600 mt-2">Inconsistent benefit — responses in roughly <strong>a quarter to half</strong> of patients. Likely because ongoing proximal C3 activation is not addressed.<sup class="text-blue-600 font-semibold">[1][6]</sup></p>
+</div>
+<div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+<p class="font-bold text-gray-800">Avacopan <span class="badge bg-gray-200 text-gray-600 ml-1">C5aR</span></p>
+<p class="text-xs text-gray-600 mt-2">Did not demonstrate conclusive benefit in C3G.<sup class="text-blue-600 font-semibold">[6]</sup></p>
+</div>
+<div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+<p class="font-bold text-gray-800">Danicopan <span class="badge bg-gray-200 text-gray-600 ml-1">Factor D</span></p>
+<p class="text-xs text-gray-600 mt-2">Did not demonstrate conclusive benefit in C3G.<sup class="text-blue-600 font-semibold">[6]</sup></p>
+</div>
+</div>
+</div>
+
+<div class="mt-6 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+<div class="px-6 py-4 bg-gray-50 border-b border-gray-100">
+<h3 class="font-bold text-gray-800 flex items-center gap-2"><i class="fas fa-code-compare text-indigo-600" aria-hidden="true"></i> Indirect Comparison: Pegcetacoplan vs Iptacopan</h3>
+</div>
+<div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+<div class="bg-rose-50 rounded-xl p-4">
+<p class="font-bold text-rose-800 mb-1"><i class="fas fa-arrow-trend-down" aria-hidden="true"></i> Proteinuria reduction</p>
+<p class="text-gray-700">Indirect comparisons suggest <strong>greater proteinuria reduction with pegcetacoplan</strong>.<sup class="text-blue-600 font-semibold">[10]</sup></p>
+</div>
+<div class="bg-gray-50 rounded-xl p-4">
+<p class="font-bold text-gray-700 mb-1"><i class="fas fa-equals" aria-hidden="true"></i> eGFR</p>
+<p class="text-gray-700"><strong>No significant eGFR difference</strong> between the two agents in indirect comparison.<sup class="text-blue-600 font-semibold">[10]</sup></p>
+</div>
+</div>
+<div class="px-6 pb-6">
+<div class="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-900">
+<i class="fas fa-triangle-exclamation mr-1" aria-hidden="true"></i> These agents <strong>do not yet have randomized data demonstrating eGFR preservation</strong>. Questions remain regarding patient selection, treatment duration, and monitoring.<sup class="text-blue-600 font-semibold">[6][10][11]</sup>
+</div>
+</div>
+</div>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- TRANSPLANT RECURRENCE TAB -->
+<!-- ============================================================ -->
+<section id="tab-transplant" role="tabpanel" aria-labelledby="tab-btn-transplant" class="tab-content hidden">
+
+<div class="bg-gradient-to-r from-rose-900 to-red-900 rounded-2xl p-6 text-white shadow-lg mb-6">
+<h2 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-heart-pulse text-rose-200" aria-hidden="true"></i> C3G Recurrence After Kidney Transplantation</h2>
+<p class="text-rose-200 text-sm mt-2">C3G recurs frequently after transplant and carries a high risk of graft loss. Pegcetacoplan's indication now includes post-transplant recurrent disease.</p>
+</div>
+
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+<div class="bg-white rounded-2xl shadow-sm border border-rose-100 p-5 text-center card-hover">
+<p class="text-3xl font-extrabold text-rose-600">~89%</p>
+<p class="text-xs text-gray-500 mt-1">Histologic recurrence (up to)</p>
+</div>
+<div class="bg-white rounded-2xl shadow-sm border border-rose-100 p-5 text-center card-hover">
+<p class="text-3xl font-extrabold text-rose-600">~50%</p>
+<p class="text-xs text-gray-500 mt-1">Allograft loss within 10 years</p>
+</div>
+<div class="bg-white rounded-2xl shadow-sm border border-rose-100 p-5 text-center card-hover">
+<p class="text-3xl font-extrabold text-rose-600">Yes</p>
+<p class="text-xs text-gray-500 mt-1">Pegcetacoplan indicated for post-transplant recurrence</p>
+</div>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+<h3 class="font-bold text-gray-800 flex items-center gap-2 mb-4"><i class="fas fa-clipboard-check text-blue-600" aria-hidden="true"></i> Pre-Transplant Planning</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+<div class="bg-blue-50 rounded-xl p-4">
+<p class="font-semibold text-blue-900"><i class="fas fa-dna mr-1" aria-hidden="true"></i> Complement genetics</p>
+<p class="text-gray-600 mt-1">Identify pathogenic variants (e.g., CFH, C3, CFB) that may inform donor selection and recurrence risk.<sup class="text-blue-600 font-semibold">[1][7][9]</sup></p>
+</div>
+<div class="bg-purple-50 rounded-xl p-4">
+<p class="font-semibold text-purple-900"><i class="fas fa-vial mr-1" aria-hidden="true"></i> Monoclonal gammopathy screen</p>
+<p class="text-gray-600 mt-1">Detect and treat paraprotein/clone before transplant where present.<sup class="text-blue-600 font-semibold">[1][9]</sup></p>
+</div>
+<div class="bg-teal-50 rounded-xl p-4">
+<p class="font-semibold text-teal-900"><i class="fas fa-users mr-1" aria-hidden="true"></i> Donor selection</p>
+<p class="text-gray-600 mt-1">Avoid living-related donors carrying the same complement variant where feasible.<sup class="text-blue-600 font-semibold">[12]</sup></p>
+</div>
+<div class="bg-amber-50 rounded-xl p-4">
+<p class="font-semibold text-amber-900"><i class="fas fa-file-medical mr-1" aria-hidden="true"></i> Counsel on recurrence risk</p>
+<p class="text-gray-600 mt-1">Discuss high recurrence rate and potential need for complement inhibition post-transplant.<sup class="text-blue-600 font-semibold">[12]</sup></p>
+</div>
+</div>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+<h3 class="font-bold text-gray-800 flex items-center gap-2 mb-5"><i class="fas fa-route text-rose-600" aria-hidden="true"></i> Post-Transplant Management Algorithm</h3>
+
+<div class="space-y-4">
+<div class="flex gap-4">
+<div class="flex flex-col items-center">
+<div class="w-9 h-9 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-sm shrink-0">1</div>
+<div class="w-0.5 bg-rose-200 flex-1 mt-1"></div>
+</div>
+<div class="pb-4 flex-1">
+<p class="font-bold text-gray-800 text-sm">Surveillance</p>
+<p class="text-sm text-gray-600 mt-1">Monitor <strong>proteinuria, eGFR, hematuria, and C3 levels</strong>. Consider protocol biopsies, as histologic recurrence can precede clinical manifestations.<sup class="text-blue-600 font-semibold">[12]</sup></p>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="flex flex-col items-center">
+<div class="w-9 h-9 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-sm shrink-0">2</div>
+<div class="w-0.5 bg-rose-200 flex-1 mt-1"></div>
+</div>
+<div class="pb-4 flex-1">
+<p class="font-bold text-gray-800 text-sm">Confirm recurrence on biopsy</p>
+<p class="text-sm text-gray-600 mt-1">Re-biopsy with IF and EM to confirm C3-dominant recurrence and exclude other causes of graft dysfunction (rejection, infection, drug toxicity).<sup class="text-blue-600 font-semibold">[12]</sup></p>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="flex flex-col items-center">
+<div class="w-9 h-9 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-sm shrink-0">3</div>
+<div class="w-0.5 bg-rose-200 flex-1 mt-1"></div>
+</div>
+<div class="pb-4 flex-1">
+<p class="font-bold text-gray-800 text-sm">Optimize supportive care &amp; immunosuppression</p>
+<p class="text-sm text-gray-600 mt-1">RAAS blockade, BP control, and review of baseline immunosuppression. Consider MMF-based regimens as per KDIGO principles.<sup class="text-blue-600 font-semibold">[1][2]</sup></p>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="flex flex-col items-center">
+<div class="w-9 h-9 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-sm shrink-0">4</div>
+<div class="w-0.5 bg-rose-200 flex-1 mt-1"></div>
+</div>
+<div class="pb-4 flex-1">
+<p class="font-bold text-gray-800 text-sm">Targeted complement inhibition</p>
+<p class="text-sm text-gray-600 mt-1"><strong>Pegcetacoplan</strong> is indicated for post-transplant recurrent C3G (C3/C3b inhibitor; 1,080 mg SC twice weekly; 68.1% relative proteinuria reduction in VALIANT, benefit consistent across transplant status).<sup class="text-blue-600 font-semibold">[6]</sup></p>
+<div class="mt-2 bg-rose-50 rounded-lg p-3 text-xs text-rose-800">
+<i class="fas fa-circle-info mr-1" aria-hidden="true"></i> Iptacopan (200 mg PO twice daily) also showed favorable results in 11 kidney transplant patients in a phase 2 trial. Eculizumab has been used historically but with inconsistent benefit.
+</div>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="flex flex-col items-center">
+<div class="w-9 h-9 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-bold text-sm shrink-0">5</div>
+</div>
+<div class="flex-1">
+<p class="font-bold text-gray-800 text-sm">Graft loss &amp; re-transplantation</p>
+<p class="text-sm text-gray-600 mt-1">If graft failure occurs, re-transplantation may be considered. Recurrence risk persists, so pre-transplant complement workup and counseling remain essential.<sup class="text-blue-600 font-semibold">[12]</sup></p>
+</div>
+</div>
+</div>
+</div>
+
+<div class="bg-gradient-to-r from-rose-50 to-red-50 rounded-2xl border border-rose-200 p-6">
+<h3 class="font-bold text-rose-900 flex items-center gap-2 mb-3"><i class="fas fa-book-medical" aria-hidden="true"></i> Key Evidence</h3>
+<ul class="space-y-2 text-sm text-gray-700">
+<li class="flex items-start gap-2"><i class="fas fa-quote-left text-rose-400 mt-1 text-xs" aria-hidden="true"></i> <span>C3G recurs frequently after kidney transplant (histologic recurrence up to ~89%) with high graft-loss risk, and the pegcetacoplan indication includes post-transplant recurrent disease.<sup class="text-blue-600 font-semibold">[12][6]</sup></span></li>
+<li class="flex items-start gap-2"><i class="fas fa-quote-left text-rose-400 mt-1 text-xs" aria-hidden="true"></i> <span>VALIANT benefit was consistent across disease type, transplant status, baseline kidney function, and concurrent immunosuppression.<sup class="text-blue-600 font-semibold">[6]</sup></span></li>
+<li class="flex items-start gap-2"><i class="fas fa-quote-left text-rose-400 mt-1 text-xs" aria-hidden="true"></i> <span>Praga et al. review native and post-transplant C3G, emphasizing the high recurrence burden and the need for optimized management strategies.<sup class="text-blue-600 font-semibold">[12]</sup></span></li>
+</ul>
+</div>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- FOLLOW-UP TAB -->
+<!-- ============================================================ -->
+<section id="tab-followup" role="tabpanel" aria-labelledby="tab-btn-followup" class="tab-content hidden">
+
+<div class="bg-gradient-to-r from-slate-800 to-slate-900 rounded-2xl p-6 text-white shadow-lg mb-6">
+<h2 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-chart-line text-slate-300" aria-hidden="true"></i> Treatment Response Monitoring — Multi-Axis Chart</h2>
+<p class="text-slate-300 text-sm mt-2">Four-axis visualization: eGFR (left) and dual proteinuria scales — g/day and ACR — on the right. X-axis: time from treatment onset.</p>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
+<div>
+<h3 class="font-bold text-gray-800 flex items-center gap-2"><i class="fas fa-wave-square text-indigo-600" aria-hidden="true"></i> Longitudinal Follow-up: eGFR &amp; Proteinuria</h3>
+<p class="text-xs text-gray-500 mt-1">Illustrative trajectories based on published C3G cohort data and iptacopan 39-month extension study</p>
+</div>
+<div class="flex flex-wrap items-center gap-3 text-xs">
+<span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-blue-500"></span> eGFR</span>
+<span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-rose-500"></span> Proteinuria (g/day)</span>
+<span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-amber-500"></span> ACR (mg/g)</span>
+</div>
+</div>
+
+<div class="overflow-x-auto">
+<svg viewBox="0 0 960 440" class="w-full min-w-[820px]" role="img" aria-label="Multi-axis chart showing eGFR, proteinuria in g/day, and ACR over 24 months">
+<rect x="80" y="20" width="760" height="340" fill="#f8fafc" rx="8"/>
+
+<line x1="80" y1="20" x2="840" y2="20" stroke="#e2e8f0" stroke-width="1"/>
+<line x1="80" y1="105" x2="840" y2="105" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4,4"/>
+<line x1="80" y1="190" x2="840" y2="190" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4,4"/>
+<line x1="80" y1="275" x2="840" y2="275" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4,4"/>
+<line x1="80" y1="360" x2="840" y2="360" stroke="#cbd5e1" stroke-width="1.5"/>
+
+<text x="70" y="25" text-anchor="end" class="text-[10px] fill-gray-500 font-semibold">90</text>
+<text x="70" y="110" text-anchor="end" class="text-[10px] fill-gray-500 font-semibold">75</text>
+<text x="70" y="195" text-anchor="end" class="text-[10px] fill-gray-500 font-semibold">60</text>
+<text x="70" y="280" text-anchor="end" class="text-[10px] fill-gray-500 font-semibold">45</text>
+<text x="70" y="365" text-anchor="end" class="text-[10px] fill-gray-500 font-semibold">30</text>
+<text x="25" y="190" text-anchor="middle" transform="rotate(-90,25,190)" class="text-[11px] fill-blue-600 font-bold">eGFR (mL/min/1.73m²)</text>
+
+<text x="850" y="25" text-anchor="start" class="text-[10px] fill-rose-500 font-semibold">6.0</text>
+<text x="850" y="110" text-anchor="start" class="text-[10px] fill-rose-500 font-semibold">4.5</text>
+<text x="850" y="195" text-anchor="start" class="text-[10px] fill-rose-500 font-semibold">3.0</text>
+<text x="850" y="280" text-anchor="start" class="text-[10px] fill-rose-500 font-semibold">1.5</text>
+<text x="850" y="365" text-anchor="start" class="text-[10px] fill-rose-500 font-semibold">0</text>
+<text x="868" y="190" text-anchor="middle" transform="rotate(90,868,190)" class="text-[10px] fill-rose-600 font-bold">Proteinuria (g/day)</text>
+
+<text x="895" y="25" text-anchor="start" class="text-[10px] fill-amber-600 font-semibold">500</text>
+<text x="895" y="110" text-anchor="start" class="text-[10px] fill-amber-600 font-semibold">350</text>
+<text x="895" y="195" text-anchor="start" class="text-[10px] fill-amber-600 font-semibold">200</text>
+<text x="895" y="280" text-anchor="start" class="text-[10px] fill-amber-600 font-semibold">75</text>
+<text x="895" y="365" text-anchor="start" class="text-[10px] fill-amber-600 font-semibold">10</text>
+<text x="945" y="190" text-anchor="middle" transform="rotate(90,945,190)" class="text-[10px] fill-amber-700 font-bold">ACR (mg/g)</text>
+
+<text x="80" y="385" text-anchor="middle" class="text-[10px] fill-gray-500 font-semibold">0</text>
+<text x="205" y="385" text-anchor="middle" class="text-[10px] fill-gray-500 font-semibold">3</text>
+<text x="330" y="385" text-anchor="middle" class="text-[10px] fill-gray-500 font-semibold">6</text>
+<text x="455" y="385" text-anchor="middle" class="text-[10px] fill-gray-500 font-semibold">9</text>
+<text x="580" y="385" text-anchor="middle" class="text-[10px] fill-gray-500 font-semibold">12</text>
+<text x="705" y="385" text-anchor="middle" class="text-[10px] fill-gray-500 font-semibold">18</text>
+<text x="830" y="385" text-anchor="middle" class="text-[10px] fill-gray-500 font-semibold">24</text>
+<text x="460" y="425" text-anchor="middle" class="text-[11px] fill-gray-600 font-bold">Time from treatment onset (months)</text>
+
+<line x1="80" y1="20" x2="80" y2="360" stroke="#e2e8f0" stroke-width="1"/>
+<line x1="205" y1="20" x2="205" y2="360" stroke="#e2e8f0" stroke-width="0.5" stroke-dasharray="2,3"/>
+<line x1="330" y1="20" x2="330" y2="360" stroke="#e2e8f0" stroke-width="0.5" stroke-dasharray="2,3"/>
+<line x1="455" y1="20" x2="455" y2="360" stroke="#e2e8f0" stroke-width="0.5" stroke-dasharray="2,3"/>
+<line x1="580" y1="20" x2="580" y2="360" stroke="#e2e8f0" stroke-width="0.5" stroke-dasharray="2,3"/>
+<line x1="705" y1="20" x2="705" y2="360" stroke="#e2e8f0" stroke-width="0.5" stroke-dasharray="2,3"/>
+<line x1="830" y1="20" x2="830" y2="360" stroke="#e2e8f0" stroke-width="0.5" stroke-dasharray="2,3"/>
+
+<polyline points="80,161 205,172 330,167 455,156 580,145 705,133 830,128"
+          fill="none" stroke="#3b82f6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="80" cy="161" r="5" fill="#3b82f6" stroke="white" stroke-width="2"/>
+<circle cx="205" cy="172" r="5" fill="#3b82f6" stroke="white" stroke-width="2"/>
+<circle cx="330" cy="167" r="5" fill="#3b82f6" stroke="white" stroke-width="2"/>
+<circle cx="455" cy="156" r="5" fill="#3b82f6" stroke="white" stroke-width="2"/>
+<circle cx="580" cy="145" r="5" fill="#3b82f6" stroke="white" stroke-width="2"/>
+<circle cx="705" cy="133" r="5" fill="#3b82f6" stroke="white" stroke-width="2"/>
+<circle cx="830" cy="128" r="5" fill="#3b82f6" stroke="white" stroke-width="2"/>
+<text x="80" y="152" text-anchor="middle" class="text-[9px] fill-blue-700 font-bold">65</text>
+<text x="205" y="163" text-anchor="middle" class="text-[9px] fill-blue-700 font-bold">63</text>
+<text x="330" y="158" text-anchor="middle" class="text-[9px] fill-blue-700 font-bold">64</text>
+<text x="455" y="147" text-anchor="middle" class="text-[9px] fill-blue-700 font-bold">66</text>
+<text x="580" y="136" text-anchor="middle" class="text-[9px] fill-blue-700 font-bold">68</text>
+<text x="705" y="124" text-anchor="middle" class="text-[9px] fill-blue-700 font-bold">70</text>
+<text x="830" y="119" text-anchor="middle" class="text-[9px] fill-blue-700 font-bold">71</text>
+
+<polyline points="80,145 205,179 330,218 455,252 580,275 705,292 830,303"
+          fill="none" stroke="#f43f5e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="80" cy="145" r="5" fill="#f43f5e" stroke="white" stroke-width="2"/>
+<circle cx="205" cy="179" r="5" fill="#f43f5e" stroke="white" stroke-width="2"/>
+<circle cx="330" cy="218" r="5" fill="#f43f5e" stroke="white" stroke-width="2"/>
+<circle cx="455" cy="252" r="5" fill="#f43f5e" stroke="white" stroke-width="2"/>
+<circle cx="580" cy="275" r="5" fill="#f43f5e" stroke="white" stroke-width="2"/>
+<circle cx="705" cy="292" r="5" fill="#f43f5e" stroke="white" stroke-width="2"/>
+<circle cx="830" cy="303" r="5" fill="#f43f5e" stroke="white" stroke-width="2"/>
+<text x="80" y="136" text-anchor="middle" class="text-[9px] fill-rose-700 font-bold">3.8</text>
+<text x="205" y="170" text-anchor="middle" class="text-[9px] fill-rose-700 font-bold">3.2</text>
+<text x="330" y="209" text-anchor="middle" class="text-[9px] fill-rose-700 font-bold">2.5</text>
+<text x="455" y="243" text-anchor="middle" class="text-[9px] fill-rose-700 font-bold">1.9</text>
+<text x="580" y="266" text-anchor="middle" class="text-[9px] fill-rose-700 font-bold">1.5</text>
+<text x="705" y="283" text-anchor="middle" class="text-[9px] fill-rose-700 font-bold">1.2</text>
+<text x="830" y="294" text-anchor="middle" class="text-[9px] fill-rose-700 font-bold">1.0</text>
+
+<polyline points="80,34 205,75 330,152 455,211 580,246 705,270 830,283"
+          fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="6,3" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="80" cy="34" r="4.5" fill="#f59e0b" stroke="white" stroke-width="2"/>
+<circle cx="205" cy="75" r="4.5" fill="#f59e0b" stroke="white" stroke-width="2"/>
+<circle cx="330" cy="152" r="4.5" fill="#f59e0b" stroke="white" stroke-width="2"/>
+<circle cx="455" cy="211" r="4.5" fill="#f59e0b" stroke="white" stroke-width="2"/>
+<circle cx="580" cy="246" r="4.5" fill="#f59e0b" stroke="white" stroke-width="2"/>
+<circle cx="705" cy="270" r="4.5" fill="#f59e0b" stroke="white" stroke-width="2"/>
+<circle cx="830" cy="283" r="4.5" fill="#f59e0b" stroke="white" stroke-width="2"/>
+<text x="80" y="27" text-anchor="middle" class="text-[9px] fill-amber-700 font-bold">480</text>
+<text x="205" y="67" text-anchor="middle" class="text-[9px] fill-amber-700 font-bold">420</text>
+<text x="330" y="144" text-anchor="middle" class="text-[9px] fill-amber-700 font-bold">310</text>
+<text x="455" y="203" text-anchor="middle" class="text-[9px] fill-amber-700 font-bold">225</text>
+<text x="580" y="238" text-anchor="middle" class="text-[9px] fill-amber-700 font-bold">175</text>
+<text x="705" y="262" text-anchor="middle" class="text-[9px] fill-amber-700 font-bold">140</text>
+<text x="830" y="275" text-anchor="middle" class="text-[9px] fill-amber-700 font-bold">120</text>
+
+<rect x="560" y="25" width="270" height="68" rx="6" fill="white" stroke="#e2e8f0" stroke-width="1"/>
+<line x1="572" y1="42" x2="602" y2="42" stroke="#3b82f6" stroke-width="3"/>
+<text x="608" y="46" class="text-[10px] fill-gray-700">eGFR (mL/min/1.73m²)</text>
+<line x1="572" y1="62" x2="602" y2="62" stroke="#f43f5e" stroke-width="3"/>
+<text x="608" y="66" class="text-[10px] fill-gray-700">Proteinuria (g/day)</text>
+<line x1="572" y1="82" x2="602" y2="82" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="6,3"/>
+<text x="608" y="86" class="text-[10px] fill-gray-700">ACR (mg/g)</text>
+</svg>
+</div>
+
+<div class="mt-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+<div class="bg-blue-50 rounded-xl p-4">
+<p class="font-bold text-blue-900 mb-1"><i class="fas fa-arrow-trend-up mr-1" aria-hidden="true"></i> eGFR (left axis)</p>
+<p class="text-gray-700 text-xs">Improving trajectory: +6 mL/min/1.73m² over 24 months. Pre-treatment slope typically −13.4 mL/min/1.73m²/year; treatment improves to −2.1 mL/min/1.73m²/year.</p>
+</div>
+<div class="bg-rose-50 rounded-xl p-4">
+<p class="font-bold text-rose-900 mb-1"><i class="fas fa-arrow-trend-down mr-1" aria-hidden="true"></i> Proteinuria — g/day</p>
+<p class="text-gray-700 text-xs">Sustained reduction: 3.8 → 1.0 g/day (74% reduction). Iptacopan extension data showed 40% UPCR reduction at 39 months; VALIANT showed 68.1% reduction at week 26.</p>
+</div>
+<div class="bg-amber-50 rounded-xl p-4">
+<p class="font-bold text-amber-900 mb-1"><i class="fas fa-arrow-trend-down mr-1" aria-hidden="true"></i> ACR (mg/g)</p>
+<p class="text-gray-700 text-xs">Parallel ACR reduction: 480 → 120 mg/g (75% reduction). ACR provides a more sensitive measure at low proteinuria levels, useful for detecting early response or relapse.</p>
+</div>
+<div class="bg-slate-50 rounded-xl p-4">
+<p class="font-bold text-slate-900 mb-1"><i class="fas fa-clipboard-check mr-1" aria-hidden="true"></i> Monitoring intervals</p>
+<p class="text-gray-700 text-xs">Assess eGFR, proteinuria, and ACR at 0, 3, 6, 9, 12, 18, 24 months. More frequent monitoring (monthly) during initiation or after dose changes.</p>
+</div>
+</div>
+
+<div class="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-900">
+<i class="fas fa-triangle-exclamation mr-1" aria-hidden="true"></i> <strong>Note:</strong> Trajectories are illustrative and based on aggregate published data. Individual patient responses vary. The Delphi consensus recommends combining eGFR, proteinuria, and reduction in kidney C3 deposition as functional markers for treatment evaluation. ACR conversion: 1 g/day ≈ 1,000 mg/g; ACR values shown are approximate equivalents.
+</div>
+</div>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- REFERENCES TAB -->
+<!-- ============================================================ -->
+<section id="tab-references" role="tabpanel" aria-labelledby="tab-btn-references" class="tab-content hidden">
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+<h2 class="text-xl font-bold text-gray-800 flex items-center gap-2"><i class="fas fa-book text-blue-600" aria-hidden="true"></i> References</h2>
+<div class="relative">
+<label for="refSearch" class="sr-only">Filter references</label>
+<i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs" aria-hidden="true"></i>
+<input id="refSearch" type="text" placeholder="Filter references…" class="pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-300 w-full sm:w-64">
+</div>
+</div>
+<ol id="refList" class="space-y-3 text-sm">
+</ol>
+<p id="refEmpty" class="hidden text-sm text-gray-400 text-center py-6">No matching references.</p>
+</div>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- QUIZ TAB -->
+<!-- ============================================================ -->
+<section id="tab-quiz" role="tabpanel" aria-labelledby="tab-btn-quiz" class="tab-content hidden">
+<div class="max-w-3xl mx-auto">
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-xl font-bold text-gray-800 flex items-center gap-2"><i class="fas fa-brain text-indigo-600" aria-hidden="true"></i> Self-Assessment</h2>
+<span class="text-sm text-gray-500" id="quizProgress" aria-live="polite">Question 1 of 10</span>
+</div>
+<div class="bg-gray-200 rounded-full h-2 mb-6">
+<div id="quizProgressBar" class="bg-indigo-500 h-2 rounded-full progress-bar" style="width:10%"></div>
+</div>
+
+<div id="quizContainer"></div>
+
+<div class="flex justify-between items-center mt-6">
+<button id="prevBtn" class="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition disabled:opacity-40 disabled:cursor-not-allowed" disabled>
+<i class="fas fa-arrow-left mr-1" aria-hidden="true"></i> Previous
+</button>
+<button id="nextBtn" class="px-5 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition shadow-sm">
+Next <i class="fas fa-arrow-right ml-1" aria-hidden="true"></i>
+</button>
+</div>
+</div>
+
+<div id="scoreCard" class="hidden mt-6 bg-gradient-to-br from-indigo-600 to-blue-700 rounded-2xl p-7 text-white text-center shadow-lg" aria-live="polite">
+<i class="fas fa-trophy text-4xl text-amber-300 mb-2" aria-hidden="true"></i>
+<h3 class="text-2xl font-bold">Quiz Complete!</h3>
+<p class="text-blue-200 mt-1 text-sm">Your score</p>
+<p class="text-4xl font-extrabold mt-2" id="finalScore">0 / 10</p>
+<button onclick="resetQuiz()" class="mt-5 px-5 py-2 bg-white/20 rounded-lg hover:bg-white/30 transition text-sm font-medium">
+<i class="fas fa-redo mr-1" aria-hidden="true"></i> Retake Quiz
+</button>
+</div>
+</div>
+</section>
+
+</main>
+
+<footer class="border-t border-gray-200 mt-14 py-7 bg-white">
+<div class="max-w-7xl mx-auto px-4 text-center text-xs text-gray-400">
+<p><i class="fas fa-book-medical text-blue-300 mr-1" aria-hidden="true"></i> Educational interactive tool based on KDIGO 2021, Nature Reviews Nephrology, VALIANT &amp; APPEAR-C3G trial publications, and 2025–2026 reviews.</p>
+<p class="mt-1.5">Not a substitute for clinical judgment. Always consult a qualified healthcare professional.</p>
+</div>
+</footer>
+
+<script>
+/* ================= UNIT TOGGLE ================= */
+const unitUSBtn = document.getElementById('unitUS');
+const unitSIBtn = document.getElementById('unitSI');
+const proteinuriaUnit = document.getElementById('proteinuriaUnit');
+const heightUnit = document.getElementById('heightUnit');
+let currentUnit = 'US';
+
+function setUnit(unit) {
+  currentUnit = unit;
+  if (unit === 'US') {
+    unitUSBtn.classList.add('active');
+    unitUSBtn.setAttribute('aria-pressed', 'true');
+    unitSIBtn.classList.remove('active');
+    unitSIBtn.setAttribute('aria-pressed', 'false');
+    proteinuriaUnit.textContent = 'g/g';
+    heightUnit.textContent = 'cm';
+  } else {
+    unitSIBtn.classList.add('active');
+    unitSIBtn.setAttribute('aria-pressed', 'true');
+    unitUSBtn.classList.remove('active');
+    unitUSBtn.setAttribute('aria-pressed', 'false');
+    proteinuriaUnit.textContent = 'mg/mmol';
+    heightUnit.textContent = 'cm';
+  }
+}
+
+unitUSBtn.addEventListener('click', () => setUnit('US'));
+unitSIBtn.addEventListener('click', () => setUnit('SI'));
+
+/* ================= BSA CALCULATOR (Mosteller) ================= */
+function calculateBSA(weightKg, heightCm) {
+  if (!weightKg || !heightCm || weightKg <= 0 || heightCm <= 0) return null;
+  // Mosteller formula: BSA (m²) = sqrt((height[cm] × weight[kg]) / 3600)
+  return Math.sqrt((heightCm * weightKg) / 3600);
+}
+
+/* ================= DOSE CALCULATOR ================= */
+function updateDoseCalculations() {
+  const weight = parseFloat(document.getElementById('inputWeight').value);
+  const height = parseFloat(document.getElementById('inputHeight').value);
+  const age = parseFloat(document.getElementById('inputAge').value);
+  const egfr = parseFloat(document.getElementById('inputEGFR').value);
+  const bsaDisplay = document.getElementById('bsaDisplay');
+
+  // BSA calculation
+  let bsa = null;
+  if (weight && height) {
+    bsa = calculateBSA(weight, height);
+    bsaDisplay.textContent = bsa.toFixed(2);
+  } else {
+    bsaDisplay.textContent = '—';
+  }
+
+  // MMF pediatric (600 mg/m² BID)
+  const mmfPediatricEl = document.getElementById('mmfPediatric');
+  if (bsa) {
+    const mmfPediatric = Math.round(600 * bsa);
+    mmfPediatricEl.textContent = `${mmfPediatric} mg PO BID (BSA ${bsa.toFixed(2)} m²)`;
+  } else {
+    mmfPediatricEl.textContent = '— (enter weight & height)';
+  }
+
+  // Prednisone (1 mg/kg/day, max 80 mg)
+  const prednisoneDoseEl = document.getElementById('prednisoneDose');
+  const prednisoneRapidEl = document.getElementById('prednisoneRapid');
+  if (weight && weight > 0) {
+    const prednisone = Math.min(weight * 1, 80);
+    prednisoneDoseEl.textContent = `${Math.round(prednisone)} mg/day (1 mg/kg)`;
+    prednisoneRapidEl.textContent = `${Math.round(prednisone)} mg/day`;
+  } else {
+    prednisoneDoseEl.textContent = '— (enter weight)';
+    prednisoneRapidEl.textContent = '— (enter weight)';
+  }
+
+  // Cyclophosphamide IV pulse (0.5–1.0 g/m²) — show range
+  const cycIVEl = document.getElementById('cycIVDose');
+  if (bsa) {
+    const cycLow = Math.round(500 * bsa);
+    const cycHigh = Math.round(1000 * bsa);
+    cycIVEl.textContent = `${cycLow}–${cycHigh} mg (0.5–1.0 g/m²)`;
+  } else {
+    cycIVEl.textContent = '— (enter weight & height)';
+  }
+
+  // Cyclophosphamide CyBorD (300 mg/m², max 500 mg)
+  const cycCyBorDEl = document.getElementById('cycDoseCyBorD');
+  if (bsa) {
+    const cyc = Math.min(300 * bsa, 500);
+    cycCyBorDEl.textContent = `${Math.round(cyc)} mg (max 500 mg)`;
+  } else {
+    cycCyBorDEl.textContent = '— (enter weight & height)';
+  }
+
+  // Bortezomib (1.3 mg/m²)
+  const bortEl = document.getElementById('bortezomibDose');
+  if (bsa) {
+    const bort = 1.3 * bsa;
+    bortEl.textContent = `${bort.toFixed(2)} mg`;
+  } else {
+    bortEl.textContent = '— (enter weight & height)';
+  }
+
+  // Rituximab (375 mg/m²)
+  const rituxEl = document.getElementById('rituximabDose');
+  if (bsa) {
+    const ritux = 375 * bsa;
+    rituxEl.textContent = `${Math.round(ritux)} mg`;
+  } else {
+    rituxEl.textContent = '— (enter weight & height)';
+  }
+}
+
+// Attach listeners to input fields
+['inputWeight', 'inputHeight', 'inputAge', 'inputEGFR'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateDoseCalculations);
+});
+
+/* ================= AUTO-DETECT ================= */
+const paramMessage = document.getElementById('paramMessage');
+const paramMessageText = document.getElementById('paramMessageText');
+
+document.getElementById('autoDetectBtn').addEventListener('click', () => {
+  const proteinuria = parseFloat(document.getElementById('inputProteinuria').value);
+  const egfr = parseFloat(document.getElementById('inputEGFR').value);
+  const hematuria = document.getElementById('inputHematuria').checked;
+
+  if (isNaN(proteinuria) || isNaN(egfr)) {
+    paramMessage.classList.remove('hidden');
+    paramMessageText.textContent = 'Please enter both proteinuria and eGFR values for auto-detection.';
+    return;
+  }
+
+  let proteinuriaG = proteinuria;
+  if (currentUnit === 'SI') {
+    proteinuriaG = proteinuria / 113;
+  }
+
+  let detected = '';
+  let recommendation = '';
+
+  if (proteinuriaG >= 2.0) {
+    detected = 'Moderate–Severe';
+    recommendation = 'KDIGO Practice Point 8.2.2.1 criteria met (proteinuria >2 g/day with biopsy-proven proliferation). Consider MMF + glucocorticoids as initial therapy.';
+  } else if (proteinuriaG > 1.0 && (hematuria || egfr < 60)) {
+    detected = 'Moderate–Severe (borderline)';
+    recommendation = 'Consider treatment per KDIGO if proteinuria >1 g/day plus hematuria or declining function. MMF + glucocorticoids may be appropriate.';
+  } else if (proteinuriaG < 1.0 && egfr >= 60 && !hematuria) {
+    detected = 'Mild';
+    recommendation = 'Supportive care with RAAS blockade, lipid management, and lifestyle measures.';
+  } else if (egfr < 30) {
+    detected = 'Advanced / consider transplant evaluation';
+    recommendation = 'eGFR <30 — complement inhibitors have limited data in this range. Evaluate for kidney replacement therapy and transplant.';
+  } else {
+    detected = 'Indeterminate';
+    recommendation = 'Insufficient criteria for auto-classification. Review biopsy findings and clinical context.';
+  }
+
+  paramMessage.classList.remove('hidden');
+  paramMessageText.textContent = `Detected scenario: ${detected}. ${recommendation}`;
+});
+
+/* ================= TAB NAVIGATION ================= */
+const tabButtons = document.querySelectorAll('.tab-btn');
+const tabContents = document.querySelectorAll('.tab-content');
+
+function activateTab(btn) {
+  const target = btn.dataset.tab;
+  tabButtons.forEach(b => {
+    b.classList.remove('tab-active');
+    b.classList.add('tab-inactive');
+    b.setAttribute('aria-selected', 'false');
+    b.setAttribute('tabindex', '-1');
+  });
+  btn.classList.add('tab-active');
+  btn.classList.remove('tab-inactive');
+  btn.setAttribute('aria-selected', 'true');
+  btn.removeAttribute('tabindex');
+  tabContents.forEach(c => { c.classList.add('hidden'); c.classList.remove('block'); });
+  const el = document.getElementById('tab-' + target);
+  el.classList.remove('hidden');
+  el.classList.add('block');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+tabButtons.forEach((btn, i) => {
+  btn.addEventListener('click', () => activateTab(btn));
+  btn.addEventListener('keydown', (e) => {
+    let newIndex = null;
+    if (e.key === 'ArrowRight') newIndex = (i + 1) % tabButtons.length;
+    else if (e.key === 'ArrowLeft') newIndex = (i - 1 + tabButtons.length) % tabButtons.length;
+    else if (e.key === 'Home') newIndex = 0;
+    else if (e.key === 'End') newIndex = tabButtons.length - 1;
+    if (newIndex !== null) {
+      e.preventDefault();
+      tabButtons[newIndex].focus();
+      activateTab(tabButtons[newIndex]);
+    }
+  });
+});
+
+/* ================= ACCORDION ================= */
+document.querySelectorAll('.acc-trigger').forEach(trigger => {
+  trigger.addEventListener('click', () => {
+    const body = trigger.nextElementSibling;
+    const icon = trigger.querySelector('.acc-icon');
+    const isOpen = body.classList.contains('open');
+
+    document.querySelectorAll('.accordion-body').forEach(b => {
+      b.classList.remove('open');
+      b.style.maxHeight = '0';
+    });
+    document.querySelectorAll('.acc-icon').forEach(i => i.style.transform = 'rotate(0deg)');
+    document.querySelectorAll('.acc-trigger').forEach(t => t.setAttribute('aria-expanded', 'false'));
+
+    if (!isOpen) {
+      body.classList.add('open');
+      body.style.maxHeight = body.scrollHeight + 'px';
+      icon.style.transform = 'rotate(180deg)';
+      trigger.setAttribute('aria-expanded', 'true');
+    }
+  });
+});
+
+window.addEventListener('resize', () => {
+  document.querySelectorAll('.accordion-body.open').forEach(b => {
+    b.style.maxHeight = b.scrollHeight + 'px';
+  });
+});
+
+/* ================= COMPARE HIGHLIGHT ================= */
+function toggleCompare() {
+  const table = document.querySelector('#tab-overview table');
+  const btn = document.getElementById('compareBtn');
+  if (!table) return;
+  const rows = table.querySelectorAll('tbody tr');
+  const highlighted = table.dataset.highlighted === '1';
+  rows.forEach(r => {
+    r.style.background = highlighted ? '' : '#fffbeb';
+  });
+  table.dataset.highlighted = highlighted ? '0' : '1';
+  btn.setAttribute('aria-pressed', highlighted ? 'false' : 'true');
+  btn.innerHTML = highlighted
+    ? '<i class="fas fa-eye" aria-hidden="true"></i> Highlight'
+    : '<i class="fas fa-eye-slash" aria-hidden="true"></i> Unhighlight';
+}
+
+/* ================= SEVERITY SELECTOR ================= */
+document.querySelectorAll('.severity-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.severity-btn').forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-pressed', 'false');
+    });
+    btn.classList.add('active');
+    btn.setAttribute('aria-pressed', 'true');
+    const sev = btn.dataset.sev;
+    document.querySelectorAll('.severity-panel').forEach(p => {
+      p.classList.toggle('hidden', p.dataset.panel !== sev);
+      if (p.dataset.panel === sev) {
+        p.classList.remove('fade-in');
+        void p.offsetWidth;
+        p.classList.add('fade-in');
+      }
+    });
+    updateDoseCalculations();
+  });
+});
+
+/* ================= REFERENCES ================= */
+const references = [
+  { n:1, text:"The 2021 Clinical Practice Guideline for the Management of Glomerular Diseases. Pierre Ronco, Brad Rovin, Detlef Schlöndorff, et al. Kidney Disease: Improving Global Outcomes." },
+  { n:2, text:"Acute Glomerulonephritis. Sethi S, De Vriese AS, Fervenza FC. Lancet (London, England). 2022;399(10335):1646-1663. doi:10.1016/S0140-6736(22)00461-5." },
+  { n:3, text:"Mayo Clinic/Renal Pathology Society Consensus Report on Pathologic Classification, Diagnosis, and Reporting of GN. Sethi S, Haas M, Markowitz GS, et al. Journal of the American Society of Nephrology : JASN. 2016;27(5):1278-87. doi:10.1681/ASN.2015060612." },
+  { n:4, text:"FDA Orange Book. FDA Orange Book." },
+  { n:5, text:"Oral Iptacopan Therapy in Patients With C3 Glomerulopathy: A Randomised, Double-Blind, Parallel Group, Multicentre, Placebo-Controlled, Phase 3 Study. Kavanagh D, Bomback AS, Vivarelli M, et al. Lancet (London, England). 2025;406(10512):1587-1598. doi:10.1016/S0140-6736(25)01148-1." },
+  { n:6, text:"Trial of Pegcetacoplan in C3 Glomerulopathy and Immune-Complex MPGN. Fakhouri F, Bomback AS, Ariceta G, et al. The New England Journal of Medicine. 2025;393(22):2210-2220. doi:10.1056/NEJMoa2501510." },
+  { n:7, text:"C3 glomerulopathy: Understanding an ultra‐rare complement‐mediated renal disease. Heiderscheit AK, Hauer JJ, Smith RJH. American Journal of Medical Genetics. Part C, Seminars in Medical Genetics. 2022;190(3):344-357. doi:10.1002/ajmg.c.31986." },
+  { n:8, text:"Kidney diseases. Daina E, Cortinovis M, Remuzzi G. Immunological Reviews. 2023;313(1):239-261. doi:10.1111/imr.13167." },
+  { n:9, text:"C3 glomerulopathy — understanding a rare complement-driven renal disease. Smith RJH, Appel GB, Blom AM, et al. Nature Reviews. Nephrology. 2019;15(3):129-143. doi:10.1038/s41581-018-0107-2." },
+  { n:10, text:"Current and Emerging Therapies for C3 Glomerulopathy and Primary (Idiopathic) Immune Complex Membranoproliferative Glomerulonephritis. Kavanagh D, Ariceta G, Vivarelli M, et al. Kidney International Reports. 2026;11(1):17-31. doi:10.1016/j.ekir.2025.10.020." },
+  { n:11, text:"Pegcetacoplan Versus Iptacopan for the Treatment of Patients with C3 Glomerulopathy: Indirect Treatment Comparisons. Dixon BP, Bomback AS, Rich C, et al. Advances in Therapy. 2026;43(8):3385-3402. doi:10.1007/s12325-026-03614-3." },
+  { n:12, text:"Complement 3 Glomerulopathy (C3G) in Native and Posttransplant Kidneys: A Review. Praga M, Smith RJ, Bomback AS. American Journal of Kidney Diseases : The Official Journal of the National Kidney Foundation. 2026;88(1):127-141. doi:10.1053/j.ajkd.2025.11.021." },
+  { n:17, text:"FABHALTA (iptacopan) Prescribing Information. European Medicines Agency. 2025." },
+  { n:18, text:"EMPAVELI (pegcetacoplan) Prescribing Information. U.S. Food and Drug Administration. Revised July 2025." },
+  { n:21, text:"Monthly Cyclophosphamide Pulses in the Treatment of Crescentic Glomerulonephritis. ScienceDirect." },
+  { n:34, text:"Delphi Consensus on Surrogate End Points in C3 Glomerulopathy and Primary Immune Complex–Mediated Membranoproliferative Glomerulonephritis. Kidney International Reports. 2025." }
+];
+
+function renderReferences(filter = '') {
+  const list = document.getElementById('refList');
+  const empty = document.getElementById('refEmpty');
+  const f = filter.toLowerCase();
+  const filtered = references.filter(r => r.text.toLowerCase().includes(f) || ('[' + r.n + ']').includes(f));
+  list.innerHTML = filtered.map(r => `
+    <li class="flex gap-3 bg-gray-50 rounded-xl p-3.5 border border-gray-100 hover:border-blue-200 transition">
+      <span class="shrink-0 w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold">${r.n}</span>
+      <span class="text-gray-700 leading-relaxed">${r.text}</span>
+    </li>`).join('');
+  empty.classList.toggle('hidden', filtered.length > 0);
+}
+renderReferences();
+document.getElementById('refSearch').addEventListener('input', e => renderReferences(e.target.value));
+
+/* ================= QUIZ ================= */
+const quizData = [
+  { q: "What is the defining immunofluorescence criterion for C3 glomerulopathy?",
+    options: ["IgG-dominant staining with trace C3","C3 at least two orders of magnitude greater than any other immune reactant, with minimal or no immunoglobulin","C1q-dominant staining with co-dominant C3","IgA-dominant staining with co-dominant C3"],
+    correct: 1, explain: "C3G is defined by C3-dominant glomerular staining on IF (C3 ≥2 orders of magnitude greater than any other immune reactant) with minimal or no immunoglobulin." },
+  { q: "Which EM finding distinguishes dense deposit disease (DDD) from C3GN?",
+    options: ["Subepithelial humps","Highly osmophilic intramembranous dense deposits","Mesangial immune complexes","Fibrillary deposits"],
+    correct: 1, explain: "DDD shows highly osmophilic intramembranous dense deposits on EM. C3GN shows mesangial, subendothelial, subepithelial and/or intramembranous deposits." },
+  { q: "Which formula is used to calculate body surface area (BSA) in this guide?",
+    options: ["Du Bois formula","Mosteller formula","Haycock formula","Schlich formula"],
+    correct: 1, explain: "The Mosteller formula is used: BSA (m²) = sqrt((height[cm] × weight[kg]) / 3600). It is a simple, widely accepted method for estimating BSA." },
+  { q: "What is the recommended initial prednisone dose for moderate-to-severe C3G?",
+    options: ["0.5 mg/kg/day","1 mg/kg/day (max 80 mg/day)","2 mg/kg/day","10 mg/day"],
+    correct: 1, explain: "Initial prednisone dosing is 1 mg/kg/day PO (max 80 mg/day), followed by a gradual taper." },
+  { q: "According to KDIGO 2021 Practice Point 8.2.2.1, what is the initial treatment for moderate-to-severe C3G without monoclonal gammopathy?",
+    options: ["Rituximab monotherapy","MMF plus glucocorticoids","Cyclophosphamide plus steroids","Plasma exchange alone"],
+    correct: 1, explain: "KDIGO recommends MMF plus glucocorticoids initially; if this fails, consider eculizumab." },
+  { q: "What is the NIH protocol dose for IV cyclophosphamide in rapidly progressive glomerulonephritis?",
+    options: ["100 mg/m² monthly","0.5–1.0 g/m² monthly for 6 months","10 mg/kg daily","500 mg weekly"],
+    correct: 1, explain: "The NIH protocol uses IV cyclophosphamide 0.5–1.0 g/m² monthly for 6 months. The Euro-Lupus protocol uses 500 mg every 2 weeks for 6 doses. Renal adjustment: reduce 25% if eGFR <30." },
+  { q: "What is the relative reduction in proteinuria at week 26 with pegcetacoplan in the VALIANT trial?",
+    options: ["35.2%","48.6%","68.1%","82.4%"],
+    correct: 2, explain: "VALIANT showed a 68.1% relative reduction in proteinuria at week 26, with benefit consistent across disease type, transplant status, baseline kidney function, and concurrent immunosuppression." },
+  { q: "What is the mechanism of action of iptacopan?",
+    options: ["C5 inhibitor","C3/C3b inhibitor","Factor B inhibitor","C5a receptor antagonist"],
+    correct: 2, explain: "Iptacopan is an oral Factor B inhibitor — acting proximally on the alternative pathway. Pegcetacoplan is a C3/C3b inhibitor; eculizumab is a C5 inhibitor." },
+  { q: "For monoclonal gammopathy-associated C3G with non-IgM monoclonal immunoglobulin, which clone-directed regimen is preferred?",
+    options: ["Rituximab monotherapy","CyBorD (cyclophosphamide, bortezomib, dexamethasone)","Eculizumab","Plasma exchange"],
+    correct: 1, explain: "For non-IgM monoclonal immunoglobulin, the CyBorD regimen is preferred. Rituximab-based therapy is preferred for IgM monoclonal immunoglobulin." },
+  { q: "In the CyBorD regimen, what is the dose of bortezomib?",
+    options: ["0.5 mg/m²","1.3 mg/m²","2.0 mg/m²","10 mg/m²"],
+    correct: 1, explain: "Bortezomib is dosed at 1.3 mg/m² subcutaneously on days 1, 8, 15, and 22 of a 28-day cycle. Subcutaneous administration reduces peripheral neuropathy risk compared to IV." }
+];
+
+let currentQuestion = 0;
+let userAnswers = new Array(quizData.length).fill(null);
+
+function renderQuestion() {
+  const q = quizData[currentQuestion];
+  const container = document.getElementById('quizContainer');
+  const progressText = document.getElementById('quizProgress');
+  const progressBar = document.getElementById('quizProgressBar');
+
+  progressText.textContent = `Question ${currentQuestion + 1} of ${quizData.length}`;
+  progressBar.style.width = `${((currentQuestion + 1) / quizData.length) * 100}%`;
+
+  const selectedIndex = userAnswers[currentQuestion];
+  const answered = selectedIndex !== null;
+
+  let html = `<h3 class="text-lg font-semibold text-gray-800 mb-4 leading-snug">${q.q}</h3><div class="space-y-2" role="group" aria-label="Answer options">`;
+  q.options.forEach((opt, idx) => {
+    let cls = 'quiz-option border border-gray-200 rounded-xl p-3.5 text-sm text-gray-700';
+    if (answered) {
+      cls += ' disabled';
+      if (idx === q.correct) cls += ' correct';
+      else if (idx === selectedIndex && idx !== q.correct) cls += ' incorrect';
+    }
+    html += `<div class="${cls}" data-index="${idx}" onclick="selectOption(${idx})" role="button" tabindex="${answered ? '-1' : '0'}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectOption(${idx});}">${opt}</div>`;
+  });
+  html += `</div>`;
+
+  if (answered) {
+    const correct = selectedIndex === q.correct;
+    html += `<div class="mt-4 p-4 rounded-xl text-sm ${correct ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'}">
+      <p class="font-semibold"><i class="fas ${correct ? 'fa-check-circle' : 'fa-times-circle'} mr-1" aria-hidden="true"></i>${correct ? 'Correct!' : 'Incorrect.'}</p>
+      <p class="mt-1.5 text-gray-700">${q.explain}</p>
+    </div>`;
+  }
+
+  container.innerHTML = html;
+  document.getElementById('prevBtn').disabled = currentQuestion === 0;
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.innerHTML = currentQuestion === quizData.length - 1
+    ? 'Finish <i class="fas fa-flag-checkered ml-1" aria-hidden="true"></i>'
+    : 'Next <i class="fas fa-arrow-right ml-1" aria-hidden="true"></i>';
+}
+
+function selectOption(idx) {
+  if (userAnswers[currentQuestion] !== null) return;
+  userAnswers[currentQuestion] = idx;
+  renderQuestion();
+}
+
+function nextQuestion() {
+  if (currentQuestion < quizData.length - 1) { currentQuestion++; renderQuestion(); }
+  else showScore();
+}
+
+function prevQuestion() {
+  if (currentQuestion > 0) { currentQuestion--; renderQuestion(); }
+}
+
+function showScore() {
+  const score = userAnswers.reduce((acc, ans, idx) => acc + (ans === quizData[idx].correct ? 1 : 0), 0);
+  document.getElementById('quizContainer').classList.add('hidden');
+  document.getElementById('prevBtn').classList.add('hidden');
+  document.getElementById('nextBtn').classList.add('hidden');
+  document.getElementById('quizProgress').classList.add('hidden');
+  document.getElementById('quizProgressBar').parentElement.classList.add('hidden');
+  document.getElementById('scoreCard').classList.remove('hidden');
+  document.getElementById('finalScore').textContent = `${score} / ${quizData.length}`;
+}
+
+function resetQuiz() {
+  currentQuestion = 0;
+  userAnswers = new Array(quizData.length).fill(null);
+  document.getElementById('quizContainer').classList.remove('hidden');
+  document.getElementById('prevBtn').classList.remove('hidden');
+  document.getElementById('nextBtn').classList.remove('hidden');
+  document.getElementById('quizProgress').classList.remove('hidden');
+  document.getElementById('quizProgressBar').parentElement.classList.remove('hidden');
+  document.getElementById('scoreCard').classList.add('hidden');
+  renderQuestion();
+}
+
+document.getElementById('nextBtn').addEventListener('click', nextQuestion);
+document.getElementById('prevBtn').addEventListener('click', prevQuestion);
+renderQuestion();
+
+// Initial dose calculation
+updateDoseCalculations();
+</script>
+</body>
+</html>
